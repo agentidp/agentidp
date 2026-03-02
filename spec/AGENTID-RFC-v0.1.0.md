@@ -7,7 +7,7 @@
 | **Version** | 0.1.0 |
 | **Status** | Draft |
 | **Date** | March 2026 |
-| **Authors** | John Doe (Creator & Lead Author) |
+| **Authors** | Tim Uzua (Creator & Lead Author) |
 | **Published by** | GudLab \| gudlab.org |
 | **License** | Apache 2.0 (Protocol) / Commercial (Registry Services) |
 
