@@ -124,7 +124,7 @@ Most competitors either don't address owner accountability (AAuth, SPIFFE, MCP A
 AgentID's `delegation_chain` claim is a unique protocol-level feature. When Agent A spawns Agent B which calls your API, the token shows the full chain:
 
 ```
-User (tim) → Agent A (orchestrator) → Agent B (form submitter) → Your Service
+User (john) → Agent A (orchestrator) → Agent B (form submitter) → Your Service
 ```
 
 Each hop has: who delegated, when, with what scopes, and how (OAuth, AIT delegation, etc.). **Scope attenuation** ensures each delegate gets equal or fewer permissions.
@@ -170,7 +170,7 @@ AgentID is designed from scratch for autonomous agents:
 
 ### 7. Reference Implementation from Day One
 
-GudForm is the first service implementing AgentID natively. This gives the protocol:
+ExampleForm is the first service implementing AgentID natively. This gives the protocol:
 - A real-world use case (agent form submissions)
 - A working proof of concept for other services to reference
 - Credibility — it's not vapourware

@@ -7,7 +7,7 @@
 | **Version** | 0.1.0 |
 | **Status** | Draft |
 | **Date** | March 2026 |
-| **Authors** | Tim Uzua (Creator & Lead Author) |
+| **Authors** | John Doe (Creator & Lead Author) |
 | **Published by** | GudLab \| gudlab.org |
 | **License** | Apache 2.0 (Protocol) / Commercial (Registry Services) |
 
@@ -106,7 +106,7 @@ The Agent Identity Token is a signed JSON Web Token (JWT) conforming to [RFC 751
 {
   "alg": "ES256",
   "typ": "AIT+jwt",
-  "kid": "gudlab-2026-03-01"
+  "kid": "agentidp-2026-03-01"
 }
 ```
 
@@ -122,14 +122,14 @@ The Agent Identity Token is a signed JSON Web Token (JWT) conforming to [RFC 751
 {
   // ── Identity Claims ──
   "agent_id": "ag_7xK9m2nP4qRtL8",
-  "agent_name": "SonalBookingAgent",
+  "agent_name": "AcmeBookingAgent",
   "agent_version": "1.2.0",
   "agent_description": "Handles calendar bookings",
 
   // ── Owner Claims ──
   "owner_id": "own_T1mR4xBq9",
   "owner_type": "org",
-  "owner_name": "Sonal AI Ltd",
+  "owner_name": "Acme Inc",
   "verification_level": "domain",
 
   // ── Capability Claims ──
@@ -152,7 +152,7 @@ The Agent Identity Token is a signed JSON Web Token (JWT) conforming to [RFC 751
   // ── Standard JWT Claims ──
   "iss": "https://registry.agentidp.dev",
   "sub": "ag_7xK9m2nP4qRtL8",
-  "aud": "https://api.gudform.com",
+  "aud": "https://api.example.com",
   "iat": 1740000000,
   "exp": 1740003600,
   "jti": "tok_unique_nonce_123"
@@ -261,7 +261,7 @@ The `delegation_chain` claim is an ordered array of delegation objects, from the
   "delegation_chain": [
     {
       "principal_type": "user",
-      "principal_id": "usr_tim_abc",
+      "principal_id": "usr_john_abc",
       "granted_at": "2026-03-01T10:00:00Z",
       "scopes": ["calendar:read", "calendar:write"],
       "evidence": "oauth2:token_exchange"
@@ -314,20 +314,20 @@ GET /v1/agents/ag_7xK9m2nP4qRtL8
 ```json
 {
   "agent_id": "ag_7xK9m2nP4qRtL8",
-  "agent_name": "SonalBookingAgent",
+  "agent_name": "AcmeBookingAgent",
   "agent_version": "1.2.0",
   "status": "active",
   "owner": {
     "owner_id": "own_T1mR4xBq9",
-    "owner_name": "Sonal AI Ltd",
+    "owner_name": "Acme Inc",
     "owner_type": "org",
     "verification_level": 2,
-    "verified_domain": "sonal.ai"
+    "verified_domain": "acme.inc"
   },
   "capabilities": ["form:submit", "calendar:read", "calendar:write"],
   "registered_at": "2026-02-15T08:30:00Z",
   "public_key_url": "/v1/agents/ag_7xK9m2nP4qRtL8/public-key",
-  "abuse_contact": "security@sonal.ai"
+  "abuse_contact": "security@acme.inc"
 }
 ```
 
@@ -395,9 +395,9 @@ The following sequence describes the end-to-end flow from agent registration to 
 1. Owner registers at `registry.agentidp.dev`, provides email, verifies to Level 2 (domain DNS TXT record).
 2. Owner creates agent: `POST /v1/agents` with name, capabilities. Registry generates ES256 key pair, returns `agent_id` + private key JWK.
 3. Owner deploys agent with private key stored in secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault).
-4. Agent needs to submit a GudForm: Agent constructs an AIT JWT, self-signs with its private key, includes target audience claim.
+4. Agent needs to submit a ExampleForm: Agent constructs an AIT JWT, self-signs with its private key, includes target audience claim.
 5. Agent calls `POST /forms/{form_id}/submit` with `Authorization: Bearer <AIT>`.
-6. GudForm verifies:
+6. ExampleForm verifies:
    - (a) JWT signature against cached public key from registry JWKS
    - (b) Token expiry
    - (c) Agent status via registry
@@ -422,11 +422,11 @@ const auth = new AgentAuth({
 
 // Get a fresh AIT for a specific service
 const token = await auth.getToken({
-  audience: "https://api.gudform.com"
+  audience: "https://api.example.com"
 });
 
 // Use it
-const res = await fetch("https://api.gudform.com/forms/xyz/submit", {
+const res = await fetch("https://api.example.com/forms/xyz/submit", {
   method: "POST",
   headers: { Authorization: `Bearer ${token}` },
   body: JSON.stringify(formData),
@@ -482,9 +482,9 @@ The minimum public disclosure is: `owner_type`, `verification_level`, and (for L
 
 ## 7. Integration Patterns
 
-### 7.1 GudForm (Reference Implementation)
+### 7.1 ExampleForm (Reference Implementation)
 
-GudForm is the first service to implement AgentID natively. Form creators configure the access tier per form via the GudForm dashboard. When an agent submits a form, GudForm verifies the AIT, applies rate limits, logs the submission with agent provenance, and provides the form owner with an audit trail showing which agents submitted what data and on whose behalf.
+ExampleForm is the first service to implement AgentID natively. Form creators configure the access tier per form via the ExampleForm dashboard. When an agent submits a form, ExampleForm verifies the AIT, applies rate limits, logs the submission with agent provenance, and provides the form owner with an audit trail showing which agents submitted what data and on whose behalf.
 
 ### 7.2 MCP Servers
 
@@ -536,7 +536,7 @@ The reference registry at `registry.agentidp.dev` is operated by GudLab. It serv
 
 | Version | Target | Milestones |
 |---------|--------|------------|
-| **v0.1.0** | Q2 2026 | Spec draft, reference SDK (JS/Python), GudForm integration, registry MVP |
+| **v0.1.0** | Q2 2026 | Spec draft, reference SDK (JS/Python), ExampleForm integration, registry MVP |
 | **v0.2.0** | Q3 2026 | Registry federation protocol, delegation chain v2, CLI tooling, agent discovery API |
 | **v0.3.0** | Q4 2026 | MCP server integration guide, CrewAI/AutoGen adapters, rate limiting standard |
 | **v1.0.0** | Q1 2027 | Stable spec release, SOC 2 compliance for registry, enterprise dashboard, formal audit |
@@ -566,8 +566,8 @@ payment:confirm      // Confirm a payment
 Service providers MAY define custom capabilities using reverse-domain notation:
 
 ```
-com.gudform.template:create
-ai.sonal.memory:export
+com.exampleform.template:create
+com.acme.memory:export
 ```
 
 ### 10.2 Error Codes
