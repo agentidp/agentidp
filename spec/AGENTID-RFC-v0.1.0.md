@@ -5,11 +5,13 @@
 | Field | Value |
 |-------|-------|
 | **Version** | 0.1.0 |
-| **Status** | Draft |
-| **Date** | March 2026 |
-| **Authors** | Tim Uzua (Creator & Lead Author) |
+| **Status** | Draft specification (not a product) |
+| **Date** | 19 September 2026 |
+| **Authors** | Timchosen Uzua |
 | **Published by** | GudLab \| gudlab.org |
-| **License** | Apache 2.0 (Protocol) / Commercial (Registry Services) |
+| **License** | Apache 2.0 (this specification) |
+
+> This document is a **draft protocol specification**. It is not an SDK, a hosted registry, or a product. Code samples and hostnames below are illustrative.
 
 > The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
 
@@ -38,7 +40,7 @@ The AgentID Protocol defines an open standard for establishing, verifying, and m
 - **Who is accountable for it?**
 - **What is it permitted to do?**
 
-AgentID addresses this gap by providing a lightweight, cryptographically secure identity layer purpose-built for the agentic era. It draws on proven patterns from OAuth 2.0, OpenID Connect, X.509, and SPIFFE, but adapts them to the unique requirements of non-human autonomous actors that operate at machine speed, chain together in delegation hierarchies, and act on behalf of principals who may not be present at the time of action.
+This draft specifies a lightweight, cryptographically verifiable identity layer for those agents. It draws on patterns from OAuth 2.0, OpenID Connect, X.509, and SPIFFE, adapted for non-human actors that operate at machine speed, chain together in delegation hierarchies, and act on behalf of principals who may not be present at the time of action.
 
 This specification defines:
 
@@ -50,7 +52,7 @@ This specification defines:
 
 ### Design Principles
 
-**Open protocol, proprietary services.** The specification is Apache 2.0 licensed and anyone can implement it. The reference registry and commercial tooling are operated by GudLab. Network effects and trust accumulation create the moat, not protocol lock-in.
+**Open specification.** This document is Apache 2.0. Anyone MAY implement a compliant registry or verifier. This repository does not ship an SDK and does not operate a public registry. A hosted registry, if one is offered later, MAY be commercial; that is out of scope for this draft.
 
 ---
 
@@ -205,7 +207,7 @@ Agent registration is a two-phase process: owner verification (performed once) f
 
 **Phase 1: Owner Registration**
 
-1. Owner signs up at the AgentID Registry (`registry.agentidp.dev`) with email and password or SSO.
+1. Owner signs up at an AgentID-compliant registry. This draft uses `registry.agentidp.dev` as an example hostname; it is not a public service in this version.
 2. Owner completes verification to their desired level (email, domain DNS, or KYB document submission).
 3. Registry issues an `owner_id` and an owner API key for agent management operations.
 
@@ -285,7 +287,7 @@ Each link in the delegation chain MUST have scopes that are equal to or a strict
 
 ## 4. Agent Registry Architecture
 
-The Agent Registry is the central trust anchor of the AgentID ecosystem. It stores agent public keys, owner verification records, revocation status, and provides APIs for registration, lookup, and verification.
+The Agent Registry is specified as the trust anchor: it stores agent public keys, owner verification records, revocation status, and provides APIs for registration, lookup, and verification. A public instance is not part of this draft.
 
 ### 4.1 Registry API
 
@@ -345,7 +347,7 @@ Agent revocation is immediate. When an owner revokes an agent (or the registry s
 
 ### 5.1 System Components
 
-The AgentID platform consists of four primary components:
+A compliant deployment MAY include the following components. They are not provided by this repository:
 
 | Component | Description |
 |-----------|-------------|
@@ -392,12 +394,12 @@ audit_log
 
 The following sequence describes the end-to-end flow from agent registration to authenticated form submission:
 
-1. Owner registers at `registry.agentidp.dev`, provides email, verifies to Level 2 (domain DNS TXT record).
+1. Owner registers at a compliant registry, provides email, verifies to Level 2 (domain DNS TXT record).
 2. Owner creates agent: `POST /v1/agents` with name, capabilities. Registry generates ES256 key pair, returns `agent_id` + private key JWK.
 3. Owner deploys agent with private key stored in secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault).
-4. Agent needs to submit a ExampleForm: Agent constructs an AIT JWT, self-signs with its private key, includes target audience claim.
+4. Agent needs to submit a form: Agent constructs an AIT JWT, self-signs with its private key, includes target audience claim.
 5. Agent calls `POST /forms/{form_id}/submit` with `Authorization: Bearer <AIT>`.
-6. ExampleForm verifies:
+6. The service verifies:
    - (a) JWT signature against cached public key from registry JWKS
    - (b) Token expiry
    - (c) Agent status via registry
@@ -405,9 +407,9 @@ The following sequence describes the end-to-end flow from agent registration to 
    - (e) Rate limit check by `agent_id`
 7. Submission accepted or rejected with appropriate HTTP status and AgentID-specific error codes.
 
-### 5.4 SDK Design
+### 5.4 SDK Design (illustrative)
 
-AgentID will ship SDKs for both sides of the interaction:
+The following sketches show how an implementer *might* wrap the protocol. **`@agentidp/sdk` and `@agentidp/verify` are not published.** Treat the names as placeholders, not packages to install.
 
 **Agent SDK** (for agent developers)
 
@@ -482,9 +484,9 @@ The minimum public disclosure is: `owner_type`, `verification_level`, and (for L
 
 ## 7. Integration Patterns
 
-### 7.1 ExampleForm (Reference Implementation)
+### 7.1 Example service (hypothetical)
 
-ExampleForm is the first service to implement AgentID natively. Form creators configure the access tier per form via the ExampleForm dashboard. When an agent submits a form, ExampleForm verifies the AIT, applies rate limits, logs the submission with agent provenance, and provides the form owner with an audit trail showing which agents submitted what data and on whose behalf.
+The following is a **pattern**, not a shipped product. A form service could implement AgentID by letting form creators set an access tier per form. When an agent submits, the service verifies the AIT, applies rate limits, logs provenance, and shows the form owner which agents submitted data and on whose behalf.
 
 ### 7.2 MCP Servers
 
@@ -512,34 +514,22 @@ The AgentID Protocol Specification is released under the **Apache 2.0** licence.
 
 The specification is maintained in a public GitHub repository with an RFC-style change process. Major version changes require community review and a minimum 90-day comment period.
 
-### 8.2 Reference Registry
+### 8.2 Registry
 
-The reference registry at `registry.agentidp.dev` is operated by GudLab. It serves as the default trust anchor for the ecosystem. Additional registries may operate as federated trust providers, cross-signing agent identities in a model similar to SSL certificate authorities. The federation protocol is specified in a companion document (planned for v0.2.0).
+The hostname `registry.agentidp.dev` is reserved as an example issuer (`iss`). A public registry is **not** available in this draft. Additional registries MAY operate later as federated trust providers; federation is not specified here.
 
-### 8.3 Commercial Model
+### 8.3 Hosted registry (optional, later)
 
-| | Free | Pro | Enterprise |
-|---|---|---|---|
-| **Agents** | 5 | 50 | Unlimited |
-| **Verification** | Email (Level 1) | Domain (Level 2) | KYB (Level 3) |
-| **Registry Lookups** | 1,000/month | 50,000/month | Custom SLA |
-| **Dashboard** | Basic | Full analytics | Custom + SSO |
-| **Support** | Community | Email | Dedicated + SLA |
-| **Audit Logs** | 7 days | 90 days | 1 year + export |
-| **Price** | Free | £49/mo | Custom |
-
-**Service-side pricing:** Services verifying agents pay based on monthly verification volume (first 10,000 free, then £0.001 per verification), similar to Twilio Verify pricing.
+If a hosted registry is operated later, it MAY be commercial. This specification does **not** define prices, SKUs, or SLAs. Do not treat any table or hostname in earlier drafts as a live offering.
 
 ---
 
 ## 9. Roadmap
 
-| Version | Target | Milestones |
-|---------|--------|------------|
-| **v0.1.0** | Q2 2026 | Spec draft, reference SDK (JS/Python), ExampleForm integration, registry MVP |
-| **v0.2.0** | Q3 2026 | Registry federation protocol, delegation chain v2, CLI tooling, agent discovery API |
-| **v0.3.0** | Q4 2026 | MCP server integration guide, CrewAI/AutoGen adapters, rate limiting standard |
-| **v1.0.0** | Q1 2027 | Stable spec release, SOC 2 compliance for registry, enterprise dashboard, formal audit |
+| Version | Status | Focus |
+|---------|--------|-------|
+| **v0.1.0** | Draft (this document) | AIT format, verification levels, access tiers, delegation, registry shape |
+| Later | Not started | SDKs, a hosted registry, federation, and framework adapters stay out of this repository until the draft is reviewed |
 
 ---
 
