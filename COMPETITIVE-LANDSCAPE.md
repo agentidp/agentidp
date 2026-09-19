@@ -1,6 +1,8 @@
 # AgentID Competitive Landscape
 
-*Last updated: March 2026*
+> **Note (September 2026):** This file is a March 2026 research note kept for history. The public AgentID repository is a **draft specification only**. There is no public SDK and no public registry. This document is not a product comparison and is not a claim that AgentID has a full-stack implementation.
+
+*Last updated: March 2026 (banner added September 2026)*
 
 ## Market Context
 
@@ -69,7 +71,7 @@ AgentID occupies a unique position: **open protocol with a full-stack implementa
 ### The Gap in the Market
 
 ```
-                    OPEN PROTOCOL ←————————————→ PROPRIETARY PRODUCT
+                    OPEN PROTOCOL ←────────────→ PROPRIETARY PRODUCT
                          │                              │
      AAuth, ANP,         │                    Auth0, Descope,
      IETF drafts         │                    Stytch, CyberArk
