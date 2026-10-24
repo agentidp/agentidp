@@ -13,7 +13,7 @@ This repository is the **protocol draft**, not a product. Contributions should i
 
 1. Fork this repository.
 2. Branch from `main` with a descriptive name (e.g. `docs/ait-lifetime`).
-3. Edit files under `spec/`.
+3. Edit files under `spec/`. Design notes that are not yet accepted spec text go under `docs/design/`.
 4. Open a pull request with:
    - A clear title
    - What was wrong or unclear

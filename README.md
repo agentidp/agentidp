@@ -41,6 +41,7 @@ This is the wrong repo for registry implementation, SDK work, or positioning aga
 | Version | Status | Focus |
 |---------|--------|-------|
 | v0.1.0 | Draft (this repo) | AIT format, verification levels, access tiers, delegation, registry shape |
+| v0.2 | Design note | Token minting: agent-held keys, scope subset, signed delegation, required `aud`, DPoP. See [`docs/design/token-minting.md`](docs/design/token-minting.md). |
 | Later | Not started | SDKs and a hosted registry stay out of this repository until the draft is reviewed |
 
 ## License
@@ -51,4 +52,5 @@ This is the wrong repo for registry implementation, SDK work, or positioning aga
 ## Links
 
 - Specification: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md)
+- Design note (v0.2 minting, not accepted spec): [`docs/design/token-minting.md`](docs/design/token-minting.md)
 - GudLab: [gudlab.org](https://gudlab.org)
