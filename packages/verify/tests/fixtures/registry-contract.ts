@@ -4,14 +4,11 @@
  * Live host `https://registry.agentidp.dev` returned HTTP 500 while this
  * package was wired. Tests use these shapes instead of the network.
  *
- * Paths the verifier calls (Next.js first, spec §4.1 second):
+ * Canonical paths (Connor / agentidp/registry main). No bare `/v1/...`:
  *   GET {registry}/.well-known/jwks.json
  *   GET {registry}/api/v1/agents/{agent_id}/public-key
- *   GET {registry}/v1/agents/{agent_id}/public-key
  *   GET {registry}/api/v1/agents/{agent_id}/status
- *   GET {registry}/v1/agents/{agent_id}/status
  *   GET {registry}/api/v1/agents/{agent_id}
- *   GET {registry}/v1/agents/{agent_id}
  *
  * No CRL, introspect, or denylist endpoint exists on the registry. Revocation
  * is the status field: active | revoked | suspended.
@@ -84,7 +81,7 @@ export function lookupRoute(
           owner_type: "org",
           verification_level: 2,
         },
-        public_key_url: `/v1/agents/${agentId}/public-key`,
+        public_key_url: `/api/v1/agents/${agentId}/public-key`,
       },
       headers: { "Cache-Control": "public, max-age=300" },
     },

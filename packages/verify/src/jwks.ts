@@ -3,9 +3,9 @@ import { importJWK, type CryptoKey, type JWK } from "jose";
 import { TtlCache } from "./cache.js";
 import { AgentIdError } from "./errors.js";
 import {
-  agentLookupUrls,
-  agentPublicKeyUrls,
-  agentStatusUrls,
+  agentLookupUrl,
+  agentPublicKeyUrl,
+  agentStatusUrl,
 } from "./registry.js";
 import {
   DEFAULT_KEY_CACHE_TTL_SECONDS,
@@ -175,24 +175,20 @@ export class RegistryKeySource {
     const cached = this.keyCache.get(cacheKey, now);
     if (cached) return cached;
 
-    for (const url of agentPublicKeyUrls(registryUrl, agentId)) {
-      const fetched = await this.getJson(url);
-      if (!fetched) continue;
-      if (this.isErrorBody(fetched.body)) {
-        this.throwStatusError(fetched.body);
-      }
-      const keys = asJwkSet(fetched.body);
-      const jwk = keys[0];
-      if (jwk) {
-        const ttl = Math.min(
-          this.ttlMs(now, expSeconds, this.ttlSeconds),
-          cacheTtlMs(this.ttlSeconds, fetched.cacheControl),
-        );
-        if (ttl > 0) this.keyCache.set(cacheKey, jwk, ttl, now);
-        return jwk;
-      }
+    const fetched = await this.getJson(agentPublicKeyUrl(registryUrl, agentId));
+    if (!fetched) return undefined;
+    if (this.isErrorBody(fetched.body)) {
+      this.throwStatusError(fetched.body);
     }
-    return undefined;
+    const keys = asJwkSet(fetched.body);
+    const jwk = keys[0];
+    if (!jwk) return undefined;
+    const ttl = Math.min(
+      this.ttlMs(now, expSeconds, this.ttlSeconds),
+      cacheTtlMs(this.ttlSeconds, fetched.cacheControl),
+    );
+    if (ttl > 0) this.keyCache.set(cacheKey, jwk, ttl, now);
+    return jwk;
   }
 
   async getAgentStatus(
@@ -206,8 +202,8 @@ export class RegistryKeySource {
     if (cached) return cached;
 
     const urls = [
-      ...agentStatusUrls(registryUrl, agentId),
-      ...agentLookupUrls(registryUrl, agentId),
+      agentStatusUrl(registryUrl, agentId),
+      agentLookupUrl(registryUrl, agentId),
     ];
 
     for (const url of urls) {
@@ -246,27 +242,26 @@ export class RegistryKeySource {
       };
     }
 
-    for (const url of agentLookupUrls(registryUrl, agentId)) {
-      const fetched = await this.getJson(url);
-      if (!fetched || !fetched.body || typeof fetched.body !== "object") continue;
-      const owner = (fetched.body as { owner?: Record<string, unknown> }).owner;
-      if (!owner) continue;
-      const value = {
-        owner_id: typeof owner.owner_id === "string" ? owner.owner_id : undefined,
-        owner_name:
-          typeof owner.owner_name === "string" ? owner.owner_name : undefined,
-        owner_type:
-          typeof owner.owner_type === "string" ? owner.owner_type : undefined,
-        verification_level: owner.verification_level,
-      };
-      const ttl = Math.min(
-        this.ttlMs(now, expSeconds, this.ttlSeconds),
-        cacheTtlMs(this.ttlSeconds, fetched.cacheControl),
-      );
-      if (ttl > 0) this.ownerCache.set(cacheKey, value, ttl, now);
-      return value;
+    const fetched = await this.getJson(agentLookupUrl(registryUrl, agentId));
+    if (!fetched || !fetched.body || typeof fetched.body !== "object") {
+      return undefined;
     }
-    return undefined;
+    const owner = (fetched.body as { owner?: Record<string, unknown> }).owner;
+    if (!owner) return undefined;
+    const value = {
+      owner_id: typeof owner.owner_id === "string" ? owner.owner_id : undefined,
+      owner_name:
+        typeof owner.owner_name === "string" ? owner.owner_name : undefined,
+      owner_type:
+        typeof owner.owner_type === "string" ? owner.owner_type : undefined,
+      verification_level: owner.verification_level,
+    };
+    const ttl = Math.min(
+      this.ttlMs(now, expSeconds, this.ttlSeconds),
+      cacheTtlMs(this.ttlSeconds, fetched.cacheControl),
+    );
+    if (ttl > 0) this.ownerCache.set(cacheKey, value, ttl, now);
+    return value;
   }
 
   private async loadJwks(jwksUri: string, now = Date.now()): Promise<JWK[]> {

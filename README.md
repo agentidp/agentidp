@@ -98,12 +98,12 @@ The default issuer is `https://registry.agentidp.dev`. Point the SDKs at a runni
 | `AGENT_PRIVATE_KEY` | `@agentidp/sdk` | none (caller supplies PEM or JWK) |
 | `AGENTIDP_JWKS_URI` | `@agentidp/verify` | `{AGENTIDP_REGISTRY_URL}/.well-known/jwks.json` |
 
-Registry contract (from `agentidp/registry` on main). `@agentidp/verify` tries the Next.js `/api/v1/...` path first, then spec `/v1/...`:
+Registry contract locked to `/api/v1/` plus well-known JWKS (`agentidp/registry` main, Connor). The host is not live yet. There are no bare `/v1/...` routes.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/.well-known/jwks.json` | Registry signing keys (registry-issued tokens from `POST /api/v1/tokens/exchange`) |
-| `GET` | `/api/v1/agents/{agent_id}/public-key` | Agent public JWK for agent-signed AITs. Spec alias: `/v1/agents/{agent_id}/public-key` |
+| `GET` | `/api/v1/agents/{agent_id}/public-key` | Agent public JWK for agent-signed AITs |
 | `GET` | `/api/v1/agents/{agent_id}/status` | `{ agent_id, status, checked_at }` (`active` / `revoked` / `suspended`) |
 | `GET` | `/api/v1/agents/{agent_id}` | Public lookup, including owner fields and `status` when the registry returns them |
 

@@ -129,14 +129,20 @@ describe("JWKS fetch and cache", () => {
       { agent_id: "ag_self", aud: "https://api.example.com" },
       pair.kid,
     );
+    const calls: string[] = [];
     const agent = await verifyAgentToken(token, {
       registryUrl: REGISTRY,
-      fetch: jsonFetch({
-        ...jwksRoute([]),
-        ...publicKeyRoute("ag_self", pair.publicJwk),
-      }),
+      fetch: jsonFetch(
+        {
+          ...jwksRoute([]),
+          ...publicKeyRoute("ag_self", pair.publicJwk),
+        },
+        calls,
+      ),
     });
     expect(agent.agent_id).toBe("ag_self");
+    expect(calls.some((url) => url.includes("/v1/") && !url.includes("/api/v1/"))).toBe(false);
+    expect(calls).toContain(`${REGISTRY}/api/v1/agents/ag_self/public-key`);
   });
 });
 

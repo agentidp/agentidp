@@ -1,9 +1,14 @@
 /**
  * Registry HTTP contract used by @agentidp/verify.
  *
- * Live Next.js app (`agentidp/registry`) serves these under `/api/v1/...`.
- * Spec §4.1 writes `/v1/...`. The verifier tries the Next.js path first, then
- * the spec path. JWKS is `/.well-known/jwks.json` on both.
+ * Locked to `agentidp/registry` on main (Connor, 2026-10-26):
+ *   GET /.well-known/jwks.json
+ *   GET /api/v1/agents/{id}/public-key
+ *   GET /api/v1/agents/{id}/status
+ *   GET /api/v1/agents/{id}          (lookup; status fallback)
+ *
+ * There are no bare `/v1/...` routes in the app. Spec §4.1 still writes
+ * `/v1/...`; that is not the live contract.
  */
 
 export function encodeAgentId(agentId: string): string {
@@ -14,35 +19,17 @@ export function jwksUrl(registryUrl: string): string {
   return `${registryUrl}/.well-known/jwks.json`;
 }
 
-export function agentPublicKeyUrls(
+export function agentPublicKeyUrl(
   registryUrl: string,
   agentId: string,
-): string[] {
-  const id = encodeAgentId(agentId);
-  return [
-    `${registryUrl}/api/v1/agents/${id}/public-key`,
-    `${registryUrl}/v1/agents/${id}/public-key`,
-  ];
+): string {
+  return `${registryUrl}/api/v1/agents/${encodeAgentId(agentId)}/public-key`;
 }
 
-export function agentStatusUrls(
-  registryUrl: string,
-  agentId: string,
-): string[] {
-  const id = encodeAgentId(agentId);
-  return [
-    `${registryUrl}/api/v1/agents/${id}/status`,
-    `${registryUrl}/v1/agents/${id}/status`,
-  ];
+export function agentStatusUrl(registryUrl: string, agentId: string): string {
+  return `${registryUrl}/api/v1/agents/${encodeAgentId(agentId)}/status`;
 }
 
-export function agentLookupUrls(
-  registryUrl: string,
-  agentId: string,
-): string[] {
-  const id = encodeAgentId(agentId);
-  return [
-    `${registryUrl}/api/v1/agents/${id}`,
-    `${registryUrl}/v1/agents/${id}`,
-  ];
+export function agentLookupUrl(registryUrl: string, agentId: string): string {
+  return `${registryUrl}/api/v1/agents/${encodeAgentId(agentId)}`;
 }

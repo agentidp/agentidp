@@ -11,9 +11,9 @@ export {
   DEFAULT_REVOCATION_CACHE_TTL_SECONDS,
 } from "./types.js";
 export {
-  agentLookupUrls,
-  agentPublicKeyUrls,
-  agentStatusUrls,
+  agentLookupUrl,
+  agentPublicKeyUrl,
+  agentStatusUrl,
   jwksUrl,
 } from "./registry.js";
 export type {

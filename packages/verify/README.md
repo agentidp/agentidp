@@ -33,7 +33,7 @@ app.post(
 | `registryUrl` | `AGENTIDP_REGISTRY_URL` or `https://registry.agentidp.dev` | Base URL for JWKS, public-key, status, lookup |
 | `jwksUri` | `{registryUrl}/.well-known/jwks.json` | Override with `AGENTIDP_JWKS_URI` |
 | `getKey` | unset | Supply a key and skip the network |
-| `checkRevocation` | `false` | `GET /api/v1/agents/{id}/status` then `/v1/...`. Fail closed if status is missing |
+| `checkRevocation` | `false` | `GET /api/v1/agents/{id}/status`. Fail closed if status is missing |
 | `lookupOwner` | `false` | If the token has no `owner_name`, fill it from public agent lookup when present |
 | `keyCacheTtlSeconds` | `3600` | JWKS / agent-key cache. Honour a shorter `Cache-Control` `max-age` |
 | `revocationCacheTtlSeconds` | `60` | Status cache. Freshness is `min(token remaining life, this TTL, Cache-Control max-age)` |
@@ -46,13 +46,13 @@ On success the middleware sets `req.agent`, including `owner_name` when that cla
 
 Default issuer: `https://registry.agentidp.dev` via `AGENTIDP_REGISTRY_URL` or `registryUrl`.
 
-The Next.js registry (`agentidp/registry`) serves `/api/v1/...`. Spec §4.1 writes `/v1/...`. The verifier tries the Next.js path first, then the spec path. Tests mock these routes so CI does not need a live host.
+Contract locked to `/api/v1/` plus well-known JWKS (Connor, `agentidp/registry` main). There are no bare `/v1/...` routes. The registry host is not live yet; tests mock these paths.
 
 | Method | Path | Body |
 | --- | --- | --- |
 | `GET` | `/.well-known/jwks.json` | `{ keys: JWK[] }`. Registry `Cache-Control: public, max-age=86400` (verifier caps at 1h) |
-| `GET` | `/api/v1/agents/{id}/public-key` then `/v1/...` | Raw JWK. `AID-003` / `AID-004` if revoked / suspended |
-| `GET` | `/api/v1/agents/{id}/status` then `/v1/...` | `{ agent_id, status, checked_at }` where `status` is `active` / `revoked` / `suspended`. `max-age=60` |
-| `GET` | `/api/v1/agents/{id}` then `/v1/...` | Public lookup, including `owner` and `status`. Used for `lookupOwner` and as a status fallback |
+| `GET` | `/api/v1/agents/{id}/public-key` | Raw JWK. `AID-003` / `AID-004` if revoked / suspended |
+| `GET` | `/api/v1/agents/{id}/status` | `{ agent_id, status, checked_at }` where `status` is `active` / `revoked` / `suspended`. `max-age=60` |
+| `GET` | `/api/v1/agents/{id}` | Public lookup, including `owner` and `status`. Used for `lookupOwner` and as a status fallback |
 
 There is no CRL, introspect, or denylist endpoint on the current registry. Revocation is the status field. Set `checkRevocation: true` when a registry is reachable. Pass `getKey` for offline verify.
