@@ -1,0 +1,38 @@
+{
+  "name": "@agentidp/verify",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Service-side AgentIDP verifier. Verify AITs and protect HTTP endpoints.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "engines": {
+    "node": ">=18"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepare": "tsc -p tsconfig.json",
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "jose": "^6.1.0"
+  },
+  "devDependencies": {
+    "@agentidp/sdk": "workspace:*",
+    "@types/node": "^22.18.8",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4"
+  }
+}

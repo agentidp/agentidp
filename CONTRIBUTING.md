@@ -1,13 +1,13 @@
-# Contributing to the AgentID specification
+# Contributing to AgentIDP
 
-This repository is the **protocol draft**, not a product. Contributions should improve the spec text in `spec/`.
+This repository holds the protocol draft in `spec/` and the TypeScript packages in `packages/`.
 
 ## How to contribute
 
 ### Feedback
 
-- Open an issue for questions, ambiguities, or errors in the spec.
-- Keep discussion on the document. Do not use this tracker for registry implementation, SDK packaging, or comparisons with other protocols.
+- Open an issue for questions, ambiguities, or errors in the spec or SDKs.
+- Keep registry-hosting work in `agentidp/registry`.
 
 ### Spec edits
 
@@ -20,16 +20,24 @@ This repository is the **protocol draft**, not a product. Contributions should i
    - What the edit changes
    - Whether it breaks a previous draft assumption
 
+### SDK edits
+
+1. Branch from `main`.
+2. Change `packages/sdk` and/or `packages/verify`.
+3. Keep Apache-2.0. Do not publish to npm from a contributor machine.
+4. Run `pnpm test` and `pnpm typecheck`.
+5. Open a pull request. Do not commit secrets; tests generate keys at runtime.
+
 ### Security
 
-If you find a problem in the protocol design that should not be public yet, email security@gudlab.org.
+If you find a problem in the protocol design or SDK that should not be public yet, email security@gudlab.org.
 
 ## RFC process
 
-1. **Draft** — change submitted as a PR.
-2. **Review** — at least 30 days of comment for material changes.
-3. **Revision** — author addresses feedback.
-4. **Acceptance** — maintainers merge into the next spec version.
+1. **Draft** - change submitted as a PR.
+2. **Review** - at least 30 days of comment for material spec changes.
+3. **Revision** - author addresses feedback.
+4. **Acceptance** - maintainers merge into the next spec version.
 
 Major version changes (e.g. v1.0.0) use a 90-day comment period.
 
