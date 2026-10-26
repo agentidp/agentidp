@@ -3,6 +3,8 @@ import type { CryptoKey, JWK } from "jose";
 export const DEFAULT_REGISTRY_URL = "https://registry.agentidp.dev";
 export const DEFAULT_JWKS_PATH = "/.well-known/jwks.json";
 export const DEFAULT_KEY_CACHE_TTL_SECONDS = 60 * 60;
+/** Status / revocation cache. Registry sends Cache-Control max-age=60. */
+export const DEFAULT_REVOCATION_CACHE_TTL_SECONDS = 60;
 export const AIT_TYP = "AIT+jwt";
 
 export type AccessTier = "open" | "authenticated" | "permissioned";
@@ -55,6 +57,8 @@ export type GetKey = (
   payload: JwtPayload,
 ) => Promise<KeyMaterial | undefined> | KeyMaterial | undefined;
 
+export type FetchHeaders = Headers | Record<string, string>;
+
 export type FetchLike = (
   input: string,
   init?: { headers?: Record<string, string> },
@@ -62,6 +66,7 @@ export type FetchLike = (
   ok: boolean;
   status: number;
   json(): Promise<unknown>;
+  headers?: FetchHeaders;
 }>;
 
 export interface VerifyAgentTokenOptions {
@@ -77,6 +82,8 @@ export interface VerifyAgentTokenOptions {
   checkRevocation?: boolean;
   lookupOwner?: boolean;
   keyCacheTtlSeconds?: number;
+  /** Status cache TTL. Freshness is min(token remaining life, this TTL, Cache-Control max-age). */
+  revocationCacheTtlSeconds?: number;
   fetch?: FetchLike;
   now?: () => Date;
   clockToleranceSeconds?: number;

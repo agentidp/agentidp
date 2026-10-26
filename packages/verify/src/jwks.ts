@@ -3,9 +3,16 @@ import { importJWK, type CryptoKey, type JWK } from "jose";
 import { TtlCache } from "./cache.js";
 import { AgentIdError } from "./errors.js";
 import {
-  DEFAULT_JWKS_PATH,
+  agentLookupUrls,
+  agentPublicKeyUrls,
+  agentStatusUrls,
+} from "./registry.js";
+import {
   DEFAULT_KEY_CACHE_TTL_SECONDS,
+  DEFAULT_JWKS_PATH,
   DEFAULT_REGISTRY_URL,
+  DEFAULT_REVOCATION_CACHE_TTL_SECONDS,
+  type FetchHeaders,
   type FetchLike,
   type JwtHeader,
   type JwtPayload,
@@ -17,6 +24,7 @@ const defaultFetch: FetchLike = async (input) => {
   return {
     ok: response.ok,
     status: response.status,
+    headers: response.headers,
     json: () => response.json() as Promise<unknown>,
   };
 };
@@ -51,6 +59,35 @@ export function resolveJwksUri(
   return `${registryUrl}${DEFAULT_JWKS_PATH}`;
 }
 
+function headerValue(
+  headers: FetchHeaders | undefined,
+  name: string,
+): string | undefined {
+  if (!headers) return undefined;
+  if (typeof (headers as Headers).get === "function") {
+    return (headers as Headers).get(name) ?? undefined;
+  }
+  const record = headers as Record<string, string>;
+  const key = Object.keys(record).find(
+    (item) => item.toLowerCase() === name.toLowerCase(),
+  );
+  return key ? record[key] : undefined;
+}
+
+/** Honour a shorter Cache-Control max-age. Ignore a longer one. */
+export function cacheTtlMs(
+  configuredSeconds: number,
+  cacheControl?: string,
+): number {
+  const configured = Math.max(0, configuredSeconds) * 1000;
+  if (!cacheControl) return configured;
+  const match = /(?:^|,)\s*max-age=(\d+)/i.exec(cacheControl);
+  if (!match) return configured;
+  const fromHeader = Number(match[1]) * 1000;
+  if (!Number.isFinite(fromHeader)) return configured;
+  return Math.min(configured, fromHeader);
+}
+
 function asJwkSet(body: unknown): JWK[] {
   if (Array.isArray(body)) {
     return body.filter((item): item is JWK => Boolean(item && typeof item === "object"));
@@ -75,6 +112,19 @@ function findKey(keys: JWK[], kid?: string): JWK | undefined {
   return keys.length === 1 ? keys[0] : undefined;
 }
 
+function statusFromBody(body: unknown): string | undefined {
+  if (!body || typeof body !== "object") return undefined;
+  const status = (body as { status?: unknown }).status;
+  return typeof status === "string" ? status : undefined;
+}
+
+interface FetchedJson {
+  body: unknown;
+  status: number;
+  ok: boolean;
+  cacheControl?: string;
+}
+
 export class RegistryKeySource {
   private readonly jwksCache = new TtlCache<JWK[]>();
   private readonly keyCache = new TtlCache<JWK>();
@@ -84,10 +134,15 @@ export class RegistryKeySource {
   constructor(
     private readonly fetchImpl: FetchLike = defaultFetch,
     private readonly ttlSeconds = DEFAULT_KEY_CACHE_TTL_SECONDS,
+    private readonly revocationTtlSeconds = DEFAULT_REVOCATION_CACHE_TTL_SECONDS,
   ) {}
 
-  ttlMs(now = Date.now(), expSeconds?: number): number {
-    const configured = this.ttlSeconds * 1000;
+  /**
+   * Revocation freshness: min(token remaining life, configured TTL).
+   * Key cache uses configured TTL (and a shorter Cache-Control max-age).
+   */
+  ttlMs(now = Date.now(), expSeconds?: number, configuredSeconds = this.ttlSeconds): number {
+    const configured = configuredSeconds * 1000;
     if (typeof expSeconds !== "number") return configured;
     const remaining = expSeconds * 1000 - now;
     if (remaining <= 0) return 0;
@@ -98,12 +153,13 @@ export class RegistryKeySource {
     jwksUri: string,
     header: JwtHeader,
     forceRefresh = false,
+    now = Date.now(),
   ): Promise<JWK | undefined> {
-    const cached = forceRefresh ? undefined : this.jwksCache.get(jwksUri);
-    const keys = cached ?? (await this.loadJwks(jwksUri));
+    const cached = forceRefresh ? undefined : this.jwksCache.get(jwksUri, now);
+    const keys = cached ?? (await this.loadJwks(jwksUri, now));
     let key = findKey(keys, header.kid);
     if (!key && !forceRefresh) {
-      const refreshed = await this.loadJwks(jwksUri);
+      const refreshed = await this.loadJwks(jwksUri, now);
       key = findKey(refreshed, header.kid);
     }
     return key;
@@ -113,27 +169,26 @@ export class RegistryKeySource {
     registryUrl: string,
     agentId: string,
     expSeconds?: number,
+    now = Date.now(),
   ): Promise<JWK | undefined> {
     const cacheKey = `agent-key:${registryUrl}:${agentId}`;
-    const cached = this.keyCache.get(cacheKey);
+    const cached = this.keyCache.get(cacheKey, now);
     if (cached) return cached;
 
-    const paths = [
-      `${registryUrl}/v1/agents/${encodeURIComponent(agentId)}/public-key`,
-      `${registryUrl}/api/v1/agents/${encodeURIComponent(agentId)}/public-key`,
-    ];
-
-    for (const url of paths) {
-      const body = await this.getJson(url);
-      if (!body) continue;
-      if (this.isErrorBody(body)) {
-        this.throwStatusError(body);
+    for (const url of agentPublicKeyUrls(registryUrl, agentId)) {
+      const fetched = await this.getJson(url);
+      if (!fetched) continue;
+      if (this.isErrorBody(fetched.body)) {
+        this.throwStatusError(fetched.body);
       }
-      const keys = asJwkSet(body);
+      const keys = asJwkSet(fetched.body);
       const jwk = keys[0];
       if (jwk) {
-        const ttl = this.ttlMs(Date.now(), expSeconds);
-        if (ttl > 0) this.keyCache.set(cacheKey, jwk, ttl);
+        const ttl = Math.min(
+          this.ttlMs(now, expSeconds, this.ttlSeconds),
+          cacheTtlMs(this.ttlSeconds, fetched.cacheControl),
+        );
+        if (ttl > 0) this.keyCache.set(cacheKey, jwk, ttl, now);
         return jwk;
       }
     }
@@ -144,26 +199,30 @@ export class RegistryKeySource {
     registryUrl: string,
     agentId: string,
     expSeconds?: number,
+    now = Date.now(),
   ): Promise<string | undefined> {
     const cacheKey = `status:${registryUrl}:${agentId}`;
-    const cached = this.statusCache.get(cacheKey);
+    const cached = this.statusCache.get(cacheKey, now);
     if (cached) return cached;
 
-    const paths = [
-      `${registryUrl}/v1/agents/${encodeURIComponent(agentId)}/status`,
-      `${registryUrl}/api/v1/agents/${encodeURIComponent(agentId)}/status`,
+    const urls = [
+      ...agentStatusUrls(registryUrl, agentId),
+      ...agentLookupUrls(registryUrl, agentId),
     ];
 
-    for (const url of paths) {
-      const body = await this.getJson(url);
-      if (!body || typeof body !== "object") continue;
-      if (this.isErrorBody(body)) {
-        this.throwStatusError(body);
+    for (const url of urls) {
+      const fetched = await this.getJson(url);
+      if (!fetched) continue;
+      if (this.isErrorBody(fetched.body)) {
+        this.throwStatusError(fetched.body);
       }
-      const status = (body as { status?: unknown }).status;
-      if (typeof status === "string") {
-        const ttl = this.ttlMs(Date.now(), expSeconds);
-        if (ttl > 0) this.statusCache.set(cacheKey, status, ttl);
+      const status = statusFromBody(fetched.body);
+      if (status) {
+        const ttl = Math.min(
+          this.ttlMs(now, expSeconds, this.revocationTtlSeconds),
+          cacheTtlMs(this.revocationTtlSeconds, fetched.cacheControl),
+        );
+        if (ttl > 0) this.statusCache.set(cacheKey, status, ttl, now);
         return status;
       }
     }
@@ -174,20 +233,23 @@ export class RegistryKeySource {
     registryUrl: string,
     agentId: string,
     expSeconds?: number,
+    now = Date.now(),
   ): Promise<{ owner_id?: string; owner_name?: string; owner_type?: string; verification_level?: unknown } | undefined> {
     const cacheKey = `owner:${registryUrl}:${agentId}`;
-    const cached = this.ownerCache.get(cacheKey);
-    if (cached) return cached as { owner_id?: string; owner_name?: string; owner_type?: string; verification_level?: unknown };
+    const cached = this.ownerCache.get(cacheKey, now);
+    if (cached) {
+      return cached as {
+        owner_id?: string;
+        owner_name?: string;
+        owner_type?: string;
+        verification_level?: unknown;
+      };
+    }
 
-    const paths = [
-      `${registryUrl}/v1/agents/${encodeURIComponent(agentId)}`,
-      `${registryUrl}/api/v1/agents/${encodeURIComponent(agentId)}`,
-    ];
-
-    for (const url of paths) {
-      const body = await this.getJson(url);
-      if (!body || typeof body !== "object") continue;
-      const owner = (body as { owner?: Record<string, unknown> }).owner;
+    for (const url of agentLookupUrls(registryUrl, agentId)) {
+      const fetched = await this.getJson(url);
+      if (!fetched || !fetched.body || typeof fetched.body !== "object") continue;
+      const owner = (fetched.body as { owner?: Record<string, unknown> }).owner;
       if (!owner) continue;
       const value = {
         owner_id: typeof owner.owner_id === "string" ? owner.owner_id : undefined,
@@ -197,32 +259,48 @@ export class RegistryKeySource {
           typeof owner.owner_type === "string" ? owner.owner_type : undefined,
         verification_level: owner.verification_level,
       };
-      const ttl = this.ttlMs(Date.now(), expSeconds);
-      if (ttl > 0) this.ownerCache.set(cacheKey, value, ttl);
+      const ttl = Math.min(
+        this.ttlMs(now, expSeconds, this.ttlSeconds),
+        cacheTtlMs(this.ttlSeconds, fetched.cacheControl),
+      );
+      if (ttl > 0) this.ownerCache.set(cacheKey, value, ttl, now);
       return value;
     }
     return undefined;
   }
 
-  private async loadJwks(jwksUri: string): Promise<JWK[]> {
-    const body = await this.getJson(jwksUri);
-    const keys = asJwkSet(body);
-    this.jwksCache.set(jwksUri, keys, this.ttlSeconds * 1000);
+  private async loadJwks(jwksUri: string, now = Date.now()): Promise<JWK[]> {
+    const fetched = await this.getJson(jwksUri);
+    if (!fetched) return [];
+    const keys = asJwkSet(fetched.body);
+    const ttl = cacheTtlMs(this.ttlSeconds, fetched.cacheControl);
+    if (ttl > 0) this.jwksCache.set(jwksUri, keys, ttl, now);
     return keys;
   }
 
-  private async getJson(url: string): Promise<unknown | undefined> {
+  private async getJson(url: string): Promise<FetchedJson | undefined> {
     try {
       const response = await this.fetchImpl(url);
+      const cacheControl = headerValue(response.headers, "cache-control");
       if (!response.ok) {
         if (response.status === 404) return undefined;
         try {
-          return await response.json();
+          return {
+            body: await response.json(),
+            status: response.status,
+            ok: false,
+            cacheControl,
+          };
         } catch {
           return undefined;
         }
       }
-      return await response.json();
+      return {
+        body: await response.json(),
+        status: response.status,
+        ok: true,
+        cacheControl,
+      };
     } catch {
       return undefined;
     }
@@ -264,13 +342,20 @@ export async function resolveVerifyKey(input: {
   registryUrl: string;
   jwksUri: string;
   expSeconds?: number;
+  now?: number;
 }): Promise<CryptoKey | Uint8Array> {
   if (input.getKey) {
     const provided = await input.getKey(input.header, input.payload);
     if (provided) return materializeKey(provided);
   }
 
-  const fromJwks = await input.source.getKeyFromJwks(input.jwksUri, input.header);
+  const now = input.now ?? Date.now();
+  const fromJwks = await input.source.getKeyFromJwks(
+    input.jwksUri,
+    input.header,
+    false,
+    now,
+  );
   if (fromJwks) return materializeKey(fromJwks);
 
   const agentId =
@@ -285,6 +370,7 @@ export async function resolveVerifyKey(input: {
       input.registryUrl,
       agentId,
       input.expSeconds,
+      now,
     );
     if (agentKey) return materializeKey(agentKey);
   }

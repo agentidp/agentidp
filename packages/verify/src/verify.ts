@@ -14,23 +14,33 @@ import type {
   VerifiedAgent,
   VerifyAgentTokenOptions,
 } from "./types.js";
-import { AIT_TYP } from "./types.js";
+import {
+  AIT_TYP,
+  DEFAULT_KEY_CACHE_TTL_SECONDS,
+  DEFAULT_REVOCATION_CACHE_TTL_SECONDS,
+} from "./types.js";
 
 const keySources = new WeakMap<
   NonNullable<VerifyAgentTokenOptions["fetch"]> | typeof globalThis,
-  RegistryKeySource
+  Map<string, RegistryKeySource>
 >();
 
 function sourceFor(options: VerifyAgentTokenOptions): RegistryKeySource {
   const fetchImpl = options.fetch;
   const cacheKey = fetchImpl ?? globalThis;
-  const existing = keySources.get(cacheKey);
+  const ttl = options.keyCacheTtlSeconds ?? DEFAULT_KEY_CACHE_TTL_SECONDS;
+  const revocationTtl =
+    options.revocationCacheTtlSeconds ?? DEFAULT_REVOCATION_CACHE_TTL_SECONDS;
+  const slotKey = `${ttl}:${revocationTtl}`;
+  let slots = keySources.get(cacheKey);
+  if (!slots) {
+    slots = new Map();
+    keySources.set(cacheKey, slots);
+  }
+  const existing = slots.get(slotKey);
   if (existing) return existing;
-  const created = new RegistryKeySource(
-    fetchImpl,
-    options.keyCacheTtlSeconds,
-  );
-  keySources.set(cacheKey, created);
+  const created = new RegistryKeySource(fetchImpl, ttl, revocationTtl);
+  slots.set(slotKey, created);
   return created;
 }
 
@@ -128,6 +138,7 @@ export async function verifyAgentToken(
   const registryUrl = resolveRegistryUrl(options.registryUrl);
   const jwksUri = resolveJwksUri(registryUrl, options.jwksUri);
   const source = sourceFor(options);
+  const nowMs = now.getTime();
 
   const key = await resolveVerifyKey({
     header,
@@ -137,6 +148,7 @@ export async function verifyAgentToken(
     registryUrl,
     jwksUri,
     expSeconds: exp,
+    now: nowMs,
   });
 
   let payload: JwtPayload;
@@ -180,7 +192,12 @@ export async function verifyAgentToken(
   }
 
   if (options.checkRevocation) {
-    const status = await source.getAgentStatus(registryUrl, agentId, exp);
+    const status = await source.getAgentStatus(
+      registryUrl,
+      agentId,
+      exp,
+      nowMs,
+    );
     if (status === "revoked") throw new AgentIdError("AID-003");
     if (status === "suspended") throw new AgentIdError("AID-004");
     if (status == null) {
@@ -193,7 +210,7 @@ export async function verifyAgentToken(
   let ownerType = optionalString(payload.owner_type);
 
   if (options.lookupOwner && ownerName == null) {
-    const lookedUp = await source.lookupOwner(registryUrl, agentId, exp);
+    const lookedUp = await source.lookupOwner(registryUrl, agentId, exp, nowMs);
     if (lookedUp) {
       ownerId = ownerId ?? lookedUp.owner_id;
       ownerName = lookedUp.owner_name;
