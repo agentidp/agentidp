@@ -171,8 +171,6 @@ The Agent Identity Token is a signed JSON Web Token (JWT) conforming to [RFC 751
 | `owner_id` | REQUIRED | Opaque owner identifier. Not a display name. |
 | `owner_type` | REQUIRED | `"person"` or `"org"` |
 | `verification_level` | REQUIRED | Integer `0`–`3`. See Section 3.2. |
-
-The bearer AIT MUST NOT include `owner_name` or other owner personal data (legal name, email, phone, address). A service that needs a display name obtains it from `verified_domain` (Level 2+) or an opt-in registry lookup, not from the token.
 | `capabilities` | OPTIONAL | Declared capabilities |
 | `delegation_chain` | OPTIONAL | See Section 3.5 |
 | `iss` | REQUIRED | Registry URL |
@@ -181,6 +179,8 @@ The bearer AIT MUST NOT include `owner_name` or other owner personal data (legal
 | `iat` | REQUIRED | Issued at |
 | `exp` | REQUIRED | Expiry (max 24h lifetime) |
 | `jti` | REQUIRED | Unique token ID for replay prevention |
+
+The bearer AIT MUST NOT include `owner_name` or other owner personal data (legal name, email, phone, address). A service that needs a display name obtains it from `verified_domain` (Level 2+) or an opt-in registry lookup, not from the token.
 
 #### 3.1.2 Cryptographic Requirements
 
