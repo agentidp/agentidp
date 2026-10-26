@@ -12,12 +12,21 @@ OAuth covers user-to-app delegation. OpenID Connect covers user identity federat
 
 This repository holds the protocol text and the TypeScript packages the site documents:
 
-| Package | Path | Role |
-| --- | --- | --- |
-| [`@agentidp/sdk`](packages/sdk) | `packages/sdk` | Agent-side: mint an AIT with a caller-held private key |
-| [`@agentidp/verify`](packages/verify) | `packages/verify` | Service-side: verify an AIT and protect an HTTP route |
+| Package | Path | Version | Role |
+| --- | --- | --- | --- |
+| [`@agentidp/sdk`](packages/sdk) | `packages/sdk` | `0.1.0` | Agent-side: mint an AIT with a caller-held private key |
+| [`@agentidp/verify`](packages/verify) | `packages/verify` | `0.1.0` | Service-side: verify an AIT and protect an HTTP route |
 
-The packages are named `@agentidp/sdk` and `@agentidp/verify`. They live in this repo today. They are not published to npm yet; publish waits on approval. Install from the workspace or a local path.
+Both packages are prepared for a public npm publish as `0.1.0` (same version as the protocol draft). They are not on the registry until a maintainer runs [docs/npm-publish.md](docs/npm-publish.md).
+
+After that publish:
+
+```bash
+npm i @agentidp/sdk
+npm i @agentidp/verify
+```
+
+Until then, clone this repo and install from the workspace or a local path:
 
 ```bash
 git clone https://github.com/agentidp/agentidp.git
@@ -136,5 +145,6 @@ Apache 2.0 ([LICENSE](LICENSE)).
 ## Links
 
 - Specification: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md)
+- npm publish checklist: [`docs/npm-publish.md`](docs/npm-publish.md)
 - Site: [agentidp.dev](https://agentidp.dev)
 - GudLab: [gudlab.org](https://gudlab.org)
