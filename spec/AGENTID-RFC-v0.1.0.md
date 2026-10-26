@@ -1,4 +1,4 @@
-# AgentID Protocol Specification
+# AgentIDP Protocol Specification
 
 **Open Specification for Agent Identity, Authentication & Access Control**
 
@@ -6,12 +6,14 @@
 |-------|-------|
 | **Version** | 0.1.0 |
 | **Status** | Draft specification (not a product) |
-| **Date** | 19 September 2026 |
+| **Date** | 26 October 2026 |
 | **Authors** | Timchosen Uzua |
 | **Published by** | GudLab \| gudlab.org |
 | **License** | Apache 2.0 (this specification) |
 
-> This document is a **draft protocol specification**. It is not an SDK, a hosted registry, or a product. Code samples and hostnames below are illustrative.
+> This document is a **draft protocol specification**. It is not an SDK, a hosted registry, or a product. Code samples and hostnames below are illustrative. The protocol name is **AgentIDP**. Do not shorten it to "AgentID" (that name is used by unrelated products).
+
+> 26 October 2026 revision: one verification-level table; revocation freshness bounded by token lifetime and cache TTL; `delegation_chain` hops asserted by the presenter; owner display names removed from the bearer AIT.
 
 > The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
 
@@ -34,7 +36,7 @@
 
 ## 1. Executive Summary
 
-The AgentID Protocol defines an open standard for establishing, verifying, and managing the identity of autonomous AI agents operating across the internet. As AI agents increasingly interact with web services, APIs, and each other on behalf of humans and organisations, the industry lacks a universal mechanism to answer three fundamental questions:
+The AgentIDP Protocol defines an open standard for establishing, verifying, and managing the identity of autonomous AI agents operating across the internet. As AI agents increasingly interact with web services, APIs, and each other on behalf of humans and organisations, the industry lacks a universal mechanism to answer three fundamental questions:
 
 - **Which agent is this?**
 - **Who is accountable for it?**
@@ -87,8 +89,8 @@ The protocol MUST satisfy the following requirements:
 1. **Verifiable identity** — A service MUST be able to cryptographically verify an agent's identity without a synchronous call to a central authority.
 2. **Owner accountability** — Every agent identity MUST be traceable to a verified human or organisational owner.
 3. **Granular access control** — Services MUST be able to define policies based on agent identity, owner identity, verification level, and declared capabilities.
-4. **Delegation transparency** — When an agent acts on behalf of another agent or a human, the full chain of delegation MUST be inspectable.
-5. **Revocability** — Compromised or abusive agent identities MUST be revocable in real time.
+4. **Delegation transparency** — When an agent acts on behalf of another agent or a human, the claimed hops MUST be present on the token so a service can inspect them. In v0.1 those hops are asserted by the presenter; they are not separately signed (Section 3.5).
+5. **Revocability** — A registry MUST be able to mark an agent revoked or suspended. A verifier that caches keys or status can learn of that change only as fast as the shorter of remaining token lifetime and its key or revocation-cache TTL (Section 4.3). This draft does not require immediate or real-time revocation on the offline path.
 6. **Interoperability** — The protocol MUST work across agent frameworks (LangChain, CrewAI, AutoGen, MCP, custom), programming languages, and deployment models.
 7. **Performance** — Token verification MUST be possible offline (no round-trip) using cached public keys, with registry lookups reserved for enhanced checks.
 
@@ -131,8 +133,7 @@ The Agent Identity Token is a signed JSON Web Token (JWT) conforming to [RFC 751
   // ── Owner Claims ──
   "owner_id": "own_T1mR4xBq9",
   "owner_type": "org",
-  "owner_name": "Acme Inc",
-  "verification_level": "domain",
+  "verification_level": 2,
 
   // ── Capability Claims ──
   "capabilities": [
@@ -167,10 +168,11 @@ The Agent Identity Token is a signed JSON Web Token (JWT) conforming to [RFC 751
 | `agent_name` | REQUIRED | Human-readable name |
 | `agent_version` | RECOMMENDED | Semantic version |
 | `agent_description` | OPTIONAL | Description of agent purpose |
-| `owner_id` | REQUIRED | Owner reference |
+| `owner_id` | REQUIRED | Opaque owner identifier. Not a display name. |
 | `owner_type` | REQUIRED | `"person"` or `"org"` |
-| `owner_name` | REQUIRED | Owner display name |
-| `verification_level` | REQUIRED | See Section 3.2 |
+| `verification_level` | REQUIRED | Integer `0`–`3`. See Section 3.2. |
+
+The bearer AIT MUST NOT include `owner_name` or other owner personal data (legal name, email, phone, address). A service that needs a display name obtains it from `verified_domain` (Level 2+) or an opt-in registry lookup, not from the token.
 | `capabilities` | OPTIONAL | Declared capabilities |
 | `delegation_chain` | OPTIONAL | See Section 3.5 |
 | `iss` | REQUIRED | Registry URL |
@@ -184,7 +186,7 @@ The Agent Identity Token is a signed JSON Web Token (JWT) conforming to [RFC 751
 
 All Agent Identity Tokens MUST be signed using **ES256** (ECDSA with P-256 curve and SHA-256). This algorithm provides strong security with compact signatures, making it well-suited for high-frequency agent-to-service communication. RSA-based algorithms are explicitly excluded to keep token sizes small.
 
-Agent key pairs are generated during registration and the public key is published in the Agent Registry. Services verify tokens by fetching the public key via the registry's JWKS endpoint, with aggressive caching (RECOMMENDED TTL: 24 hours).
+Agent key pairs are generated during registration and the public key is published in the Agent Registry. Services verify tokens by fetching the public key via the registry's JWKS endpoint. Verifiers MAY cache those keys. RECOMMENDED key-cache TTL: 1 hour. Verifiers MUST honour a shorter `Cache-Control` `max-age` from the registry. A cached key does not mean the agent is still active; see Section 4.3.
 
 #### 3.1.3 Token Lifetime
 
@@ -192,14 +194,18 @@ AIT tokens MUST have a maximum lifetime of 24 hours. For high-security contexts,
 
 ### 3.2 Owner Verification Levels
 
-The AgentID protocol defines four verification levels, each providing increasing assurance about the agent owner's identity. Services can set minimum verification requirements per endpoint or form.
+AgentIDP defines exactly four owner verification levels. This table is the only definition. Level 0 is account-only (email unconfirmed). Level 1 is email confirmation. There are four levels, numbered 0–3.
 
-| Level | Name | Verification Method | Use Case |
-|-------|------|---------------------|----------|
-| 0 | **Unverified** | Email address confirmed only | Testing, development, open forms |
-| 1 | **Email** | Email + phone verification | Low-risk public services |
-| 2 | **Domain** | DNS TXT record or hosted file at owner's domain | Business APIs, partner integrations |
-| 3 | **Organisation** | KYB: company registration, legal entity verification | Financial services, healthcare, regulated industries |
+`verification_level` on the AIT and in registry records MUST be the integer **Level** (`0`, `1`, `2`, or `3`). The **Name** column is for prose only. The claim value is the integer, not the name string.
+
+| Level | Name | Meaning | Typical use |
+|-------|------|---------|-------------|
+| 0 | **Unverified** | Account exists. Email has not been confirmed. | Testing, development, open forms |
+| 1 | **Email** | Email address confirmed. | Low-risk public services |
+| 2 | **Domain** | Control of a domain proven (DNS TXT or equivalent). | Business APIs, partner integrations |
+| 3 | **Organisation** | Business / KYB verification of a legal entity. | Financial services, healthcare, regulated industries |
+
+Services MAY set a minimum `verification_level` per endpoint or form. Compare as integers: Level 2 satisfies a minimum of 2; Level 1 does not.
 
 ### 3.3 Agent Registration Flow
 
@@ -207,8 +213,8 @@ Agent registration is a two-phase process: owner verification (performed once) f
 
 **Phase 1: Owner Registration**
 
-1. Owner signs up at an AgentID-compliant registry. This draft uses `registry.agentidp.dev` as an example hostname; it is not a public service in this version.
-2. Owner completes verification to their desired level (email, domain DNS, or KYB document submission).
+1. Owner signs up at an AgentIDP-compliant registry. This draft uses `registry.agentidp.dev` as an example hostname; it is not a public service in this version.
+2. Owner completes verification to their desired level (Section 3.2): Unverified (account only), Email, Domain, or Organisation (KYB).
 3. Registry issues an `owner_id` and an owner API key for agent management operations.
 
 **Phase 2: Agent Registration**
@@ -221,14 +227,14 @@ Agent registration is a two-phase process: owner verification (performed once) f
 
 ### 3.4 Service-Side Access Control
 
-Services consuming AgentID tokens implement access policies based on the claims present in the AIT. The protocol defines three standard access tiers that services MAY adopt:
+Services consuming AgentIDP tokens implement access policies based on the claims present in the AIT. The protocol defines three standard access tiers that services MAY adopt:
 
 #### 3.4.1 Access Tiers
 
 | Tier | Description | Rate Limiting | Use Case |
 |------|-------------|---------------|----------|
 | **Open** | Any agent may access. No AIT required. | IP-based only | Public forms, read-only APIs, open data |
-| **Authenticated** | Valid AIT from any registered agent required. Token signature and revocation status verified. | Per `agent_id` | General-purpose APIs, standard forms |
+| **Authenticated** | Valid AIT from any registered agent required. Signature MUST be verified. Revocation freshness follows Section 4.3. | Per `agent_id` | General-purpose APIs, standard forms |
 | **Permissioned** | Valid AIT required AND `agent_id` or `owner_id` must be on an explicit allowlist. | Per `agent_id` | Partner integrations, sensitive data, high-value transactions |
 
 #### 3.4.2 Policy Expression
@@ -252,11 +258,15 @@ Services define policies as a set of rules evaluated against AIT claims. The pro
 
 ### 3.5 Delegation Chain
 
-A critical feature of the AgentID protocol is transparent delegation. When Agent A instructs Agent B to perform an action, or when a human user authorises an agent to act on their behalf, the delegation chain is encoded in the AIT so that the receiving service can inspect the full provenance of the request.
+When Agent A instructs Agent B to perform an action, or when a human authorises an agent to act on their behalf, v0.1 MAY put a `delegation_chain` on the AIT so the receiving service can read the hops the presenter claims.
+
+This is **not** a full cryptographically verified history. In v0.1 each hop is asserted by the presenting agent and is covered only by that agent's signature on the AIT. Earlier hops are not separately signed. A service that trusts `delegation_chain` is trusting the presenter's account of those hops. This is a known weakness.
+
+v0.2 is expected to require a per-hop `AIT-DLG+jwt` signed by the delegator, with narrowing scopes, audience, and expiry. That format lives in the design note [`docs/design/token-minting.md`](https://github.com/agentidp/agentidp/blob/cursor/token-minting-design-c9a6/docs/design/token-minting.md) on [PR #3](https://github.com/agentidp/agentidp/pull/3) (the file is not on `main` as of this revision). That note is not accepted spec text. This RFC does not define signed hops.
 
 #### 3.5.1 Delegation Chain Structure
 
-The `delegation_chain` claim is an ordered array of delegation objects, from the original principal (index 0) to the most recent delegator. Each entry records who delegated, when, and with what scope restrictions.
+The `delegation_chain` claim is an ordered array of unsigned JSON objects, from the claimed original principal (index 0) to the most recent claimed delegator. Each entry records who the presenter says delegated, when, and with what scope restrictions. The verifier MUST NOT treat the array as proof that those principals actually granted the hops.
 
 ```json
 {
@@ -281,7 +291,7 @@ The `delegation_chain` claim is an ordered array of delegation objects, from the
 
 #### 3.5.2 Scope Attenuation
 
-Each link in the delegation chain MUST have scopes that are equal to or a strict subset of the previous link's scopes. A delegate cannot grant more permissions than it received. This is enforced by both the issuing agent (when constructing the token) and the verifying service (when validating claims).
+Each link in the delegation chain MUST have scopes that are equal to or a strict subset of the previous link's scopes. A delegate cannot grant more permissions than it received. The presenting agent SHOULD construct an attenuating chain. The verifying service MUST reject a chain that widens scopes relative to an earlier hop in the same claim (`AID-009`). Scope attenuation checks the asserted objects only; it does not authenticate the hops.
 
 ---
 
@@ -302,7 +312,7 @@ The registry exposes a RESTful API with the following core endpoints:
 | `GET` | `/v1/agents/{agent_id}/public-key` | Fetch agent's public key (JWK) |
 | `DELETE` | `/v1/agents/{agent_id}` | Revoke an agent (owner auth required) |
 | `GET` | `/.well-known/jwks.json` | Registry JWKS endpoint |
-| `GET` | `/v1/agents/{agent_id}/status` | Revocation check (real-time) |
+| `GET` | `/v1/agents/{agent_id}/status` | Current agent status (`active`, `suspended`, `revoked`). Fresh at query time only. |
 | `POST` | `/v1/tokens/exchange` | Exchange owner credentials for AIT |
 
 ### 4.2 Agent Lookup Response
@@ -321,7 +331,6 @@ GET /v1/agents/ag_7xK9m2nP4qRtL8
   "status": "active",
   "owner": {
     "owner_id": "own_T1mR4xBq9",
-    "owner_name": "Acme Inc",
     "owner_type": "org",
     "verification_level": 2,
     "verified_domain": "acme.inc"
@@ -335,11 +344,27 @@ GET /v1/agents/ag_7xK9m2nP4qRtL8
 
 ### 4.3 Revocation
 
-Agent revocation is immediate. When an owner revokes an agent (or the registry suspends one for abuse), the agent's status is set to `"revoked"` in the registry.
+When an owner revokes an agent, or the registry suspends one for abuse, the registry sets that agent's status to `"revoked"` or `"suspended"`. A client that queries the registry after that write sees the new status.
 
-- Services implementing real-time revocation checks call the status endpoint.
-- Services relying on cached public keys SHOULD implement a maximum cache TTL of 1 hour and MUST honour the `Cache-Control` headers returned by the registry.
-- The registry publishes a Certificate Revocation List (CRL) at a well-known endpoint and supports OCSP-style stapling for high-throughput services.
+This draft does **not** guarantee immediate or real-time revocation at every verifier.
+
+A verifier that caches public keys, JWKS, or revocation/status results can learn of a revocation only as fast as the **shorter** of:
+
+1. remaining lifetime of an AIT it already holds (`exp - now`), and
+2. the TTL of its key cache or revocation/status cache.
+
+A verifier that never calls the status endpoint, and that still accepts a previously cached key, can accept tokens from a revoked agent until those tokens expire.
+
+| Path | What it tells you | Freshness |
+|------|-------------------|-----------|
+| Live `GET /v1/agents/{agent_id}/status` | Registry status at query time | Current for that request |
+| Cached JWKS or agent public key | Key material only, not status | Up to the key-cache TTL (RECOMMENDED maximum 1 hour; MUST honour a shorter `Cache-Control`) |
+| Token `exp` | When this AIT stops being acceptable without a new mint | At most 24 hours from `iat` (Section 3.1.3) |
+| CRL or OCSP-style stapling | Optional shorter-lived status | Only if the verifier uses it |
+
+CRL and OCSP-style stapling MAY be offered as a fresher path. Neither is required in v0.1. This draft does not claim either is deployed.
+
+A statement that revocation is immediate or real-time is accurate only for a verifier that calls a live status endpoint (or an equivalent staple) on every decision. It is not accurate for the offline or cached-key path.
 
 ---
 
@@ -353,7 +378,7 @@ A compliant deployment MAY include the following components. They are not provid
 |-----------|-------------|
 | **Registry Service** | Source of truth for agent identities, public keys, and owner verification status. Globally distributed with regional read replicas. |
 | **Auth Service** | Handles owner authentication, agent token exchange, and SDK endpoints for obtaining fresh AITs. |
-| **Verification Service** | Asynchronous pipeline for processing owner verification requests (email, DNS, KYB). |
+| **Verification Service** | Asynchronous pipeline for processing owner verification requests (email confirmation, domain control, KYB). Level 0 needs no extra evidence. |
 | **Dashboard & Admin Console** | Web application for owners to manage agents, view analytics, and configure policies. |
 
 ### 5.2 Data Model
@@ -394,18 +419,18 @@ audit_log
 
 The following sequence describes the end-to-end flow from agent registration to authenticated form submission:
 
-1. Owner registers at a compliant registry, provides email, verifies to Level 2 (domain DNS TXT record).
+1. Owner registers at a compliant registry, provides email, confirms it (Level 1), then proves domain control (Level 2, DNS TXT or equivalent).
 2. Owner creates agent: `POST /v1/agents` with name, capabilities. Registry generates ES256 key pair, returns `agent_id` + private key JWK.
 3. Owner deploys agent with private key stored in secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault).
 4. Agent needs to submit a form: Agent constructs an AIT JWT, self-signs with its private key, includes target audience claim.
 5. Agent calls `POST /forms/{form_id}/submit` with `Authorization: Bearer <AIT>`.
 6. The service verifies:
-   - (a) JWT signature against cached public key from registry JWKS
+   - (a) JWT signature against a public key from registry JWKS (cached or fetched)
    - (b) Token expiry
-   - (c) Agent status via registry
-   - (d) Access tier policy
-   - (e) Rate limit check by `agent_id`
-7. Submission accepted or rejected with appropriate HTTP status and AgentID-specific error codes.
+   - (c) Access tier policy, including `min_verification_level` as an integer 0–3
+   - (d) Rate limit check by `agent_id`
+   - (e) Optionally, current agent status via the registry (Section 4.3). Offline verification MAY skip this check; freshness is then bounded by remaining token lifetime and the key-cache TTL.
+7. Submission accepted or rejected with appropriate HTTP status and AgentIDP-specific error codes.
 
 ### 5.4 SDK Design (illustrative)
 
@@ -448,7 +473,7 @@ app.post('/forms/:id/submit',
     rateLimit: { requestsPerHour: 100, scope: 'agent_id' },
   }),
   (req, res) => {
-    console.log(req.agent.agent_id, req.agent.owner_name);
+    console.log(req.agent.agent_id, req.agent.owner_id);
     // Process form submission...
   }
 );
@@ -478,7 +503,7 @@ Every AIT includes a unique `jti` (JWT ID) claim. Services SHOULD maintain a `jt
 
 The Agent Registry stores owner identity information subject to GDPR, UK GDPR, and equivalent regulations. Owner personal data is not exposed via the public agent lookup API unless the owner opts in.
 
-The minimum public disclosure is: `owner_type`, `verification_level`, and (for Level 2+) `verified_domain`. Owner name and contact details are available only to the registry operator for abuse resolution.
+The bearer AIT MUST NOT carry owner display names or other owner personal data. The minimum public disclosure on a lookup is: `owner_id`, `owner_type`, `verification_level`, and (for Level 2+) `verified_domain`. Owner name and contact details stay with the registry operator for abuse resolution unless the owner opts in to a display field. A service that wants a human-readable owner label uses `verified_domain` or that opt-in lookup, not the token.
 
 ---
 
@@ -486,23 +511,23 @@ The minimum public disclosure is: `owner_type`, `verification_level`, and (for L
 
 ### 7.1 Example service (hypothetical)
 
-The following is a **pattern**, not a shipped product. A form service could implement AgentID by letting form creators set an access tier per form. When an agent submits, the service verifies the AIT, applies rate limits, logs provenance, and shows the form owner which agents submitted data and on whose behalf.
+The following is a **pattern**, not a shipped product. A form service could implement AgentIDP by letting form creators set an access tier per form. When an agent submits, the service verifies the AIT, applies rate limits, logs the claimed provenance, and shows the form owner which agents submitted data and which `owner_id` they presented.
 
 ### 7.2 MCP Servers
 
-Model Context Protocol (MCP) servers can adopt AgentID to authenticate the AI models connecting to them. When an MCP client presents an AIT, the server can verify the agent's identity and apply tool-level access policies. This is a natural fit since MCP already defines a tool interface but lacks a standardised identity layer.
+Model Context Protocol (MCP) servers can adopt AgentIDP to authenticate the AI models connecting to them. When an MCP client presents an AIT, the server can verify the agent's identity and apply tool-level access policies. This is a natural fit since MCP already defines a tool interface but lacks a standardised identity layer.
 
 ### 7.3 Multi-Agent Orchestration
 
-Orchestration frameworks like CrewAI and AutoGen can use the delegation chain feature to propagate identity through multi-agent workflows. The orchestrator agent includes its own identity in the delegation chain when dispatching tasks to sub-agents, creating a full audit trail from the original human instruction to the final service interaction.
+Orchestration frameworks like CrewAI and AutoGen can put claimed hops in `delegation_chain` when dispatching tasks to sub-agents. The result is an asserted trail from the claimed original instruction to the acting agent. It is not a per-hop signed history. See Section 3.5.
 
 ### 7.4 Existing OAuth Services
 
-AgentID is designed to complement, not replace, OAuth. For services that already use OAuth for user authentication, AgentID adds the agent identity layer. A typical pattern is:
+AgentIDP is designed to complement, not replace, OAuth. For services that already use OAuth for user authentication, AgentIDP adds the agent identity layer. A typical pattern is:
 
 1. The user grants an OAuth token to the agent (user delegation).
-2. The agent includes the OAuth grant reference in the AIT delegation chain.
-3. The service verifies both the agent's identity (AgentID) and the user's authorisation (OAuth).
+2. The agent includes the OAuth grant reference in the AIT delegation chain (asserted in v0.1; see Section 3.5).
+3. The service verifies both the agent's identity (AgentIDP) and the user's authorisation (OAuth).
 
 ---
 
@@ -510,7 +535,7 @@ AgentID is designed to complement, not replace, OAuth. For services that already
 
 ### 8.1 Open Specification
 
-The AgentID Protocol Specification is released under the **Apache 2.0** licence. Anyone may implement a compliant registry, SDK, or verification service.
+The AgentIDP Protocol Specification is released under the **Apache 2.0** licence. Anyone may implement a compliant registry, SDK, or verification service.
 
 The specification is maintained in a public GitHub repository with an RFC-style change process. Major version changes require community review and a minimum 90-day comment period.
 
@@ -528,7 +553,8 @@ If a hosted registry is operated later, it MAY be commercial. This specification
 
 | Version | Status | Focus |
 |---------|--------|-------|
-| **v0.1.0** | Draft (this document) | AIT format, verification levels, access tiers, delegation, registry shape |
+| **v0.1.0** | Draft (this document) | AIT format, verification levels, access tiers, asserted delegation hops, registry shape |
+| v0.2 | Design note, not accepted spec | Per-hop `AIT-DLG+jwt` signatures and other minting changes. See [`docs/design/token-minting.md`](https://github.com/agentidp/agentidp/blob/cursor/token-minting-design-c9a6/docs/design/token-minting.md) on [PR #3](https://github.com/agentidp/agentidp/pull/3). |
 | Later | Not started | SDKs, a hosted registry, federation, and framework adapters stay out of this repository until the draft is reviewed |
 
 ---
@@ -583,11 +609,19 @@ com.acme.memory:export
 | **Agent** | An autonomous software system that interacts with services on behalf of a principal (human user or another agent). |
 | **Owner** | The human or organisation legally accountable for an agent's actions. |
 | **Principal** | The entity on whose behalf an agent acts. May be a user, an organisation, or another agent. |
-| **Delegation Chain** | The ordered sequence of principals and agents through which authority was delegated, from the original authoriser to the acting agent. |
+| **Delegation Chain** | The ordered sequence of principals and agents through which authority was claimed to be delegated, from the original authoriser to the acting agent. In v0.1 the hops are asserted by the presenter, not separately signed. |
 | **Registry** | The service that stores agent identities, public keys, and verification records. |
 | **Scope Attenuation** | The principle that each link in a delegation chain can only have equal or fewer permissions than the previous link. |
-| **Verification Level** | A numeric indicator (0–3) of the rigour of identity verification performed on an agent's owner. |
+| **Verification Level** | Integer 0–3 as defined in Section 3.2: Unverified, Email, Domain, Organisation. |
+
+### 10.4 Open Issues
+
+These items are known gaps in v0.1. They are not specified here.
+
+1. **Per-hop signatures (required for v0.2).** Each delegation hop MUST become an `AIT-DLG+jwt` signed by the delegator, with narrowing scopes, audience, and expiry. See [`docs/design/token-minting.md`](https://github.com/agentidp/agentidp/blob/cursor/token-minting-design-c9a6/docs/design/token-minting.md) on [PR #3](https://github.com/agentidp/agentidp/pull/3). Until that lands, treat `delegation_chain` as presenter-asserted.
+2. **Revocation staple profile.** If a later draft requires CRL or OCSP-style stapling, it MUST define the object, TTL, and verifier behaviour. v0.1 leaves those optional and undeployed.
+3. **Owner display names.** v0.1 keeps names off the bearer AIT. A later draft MAY define an opt-in registry display field; it MUST NOT put PII back on the bearer token.
 
 ---
 
-*End of Specification — AgentID Protocol v0.1.0 Draft*
+*End of Specification — AgentIDP Protocol v0.1.0 Draft*
