@@ -40,15 +40,24 @@ export async function signAit(
     .sign(privateKey);
 }
 
+export interface MockRoute {
+  status?: number;
+  body: unknown;
+  headers?: Record<string, string>;
+}
+
 export function jsonFetch(
-  routes: Record<string, { status?: number; body: unknown }>,
+  routes: Record<string, MockRoute>,
+  calls?: string[],
 ): FetchLike {
   return async (input) => {
+    calls?.push(input);
     const hit = routes[input];
     if (!hit) {
       return {
         ok: false,
         status: 404,
+        headers: {},
         json: async () => ({ error: "not found" }),
       };
     }
@@ -56,6 +65,7 @@ export function jsonFetch(
     return {
       ok: status >= 200 && status < 300,
       status,
+      headers: hit.headers ?? {},
       json: async () => hit.body,
     };
   };
