@@ -98,18 +98,18 @@ The default issuer is `https://registry.agentidp.dev`. Point the SDKs at a runni
 | `AGENT_PRIVATE_KEY` | `@agentidp/sdk` | none (caller supplies PEM or JWK) |
 | `AGENTIDP_JWKS_URI` | `@agentidp/verify` | `{AGENTIDP_REGISTRY_URL}/.well-known/jwks.json` |
 
-Registry contract (from `agentidp/registry` on main):
+Registry contract locked to `/api/v1/` plus well-known JWKS (`agentidp/registry` main, Connor). The host is not live yet. There are no bare `/v1/...` routes.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/.well-known/jwks.json` | Registry signing keys (registry-issued tokens from `POST /api/v1/tokens/exchange`) |
-| `GET` | `/v1/agents/{agent_id}/public-key` | Agent public JWK for agent-signed AITs. The current Next.js registry also serves `/api/v1/agents/{agent_id}/public-key`. The verifier tries both. |
-| `GET` | `/v1/agents/{agent_id}/status` | `{ agent_id, status, checked_at }` (`active` / `revoked` / `suspended`) |
-| `GET` | `/v1/agents/{agent_id}` | Public lookup, including owner fields when the registry returns them |
+| `GET` | `/api/v1/agents/{agent_id}/public-key` | Agent public JWK for agent-signed AITs |
+| `GET` | `/api/v1/agents/{agent_id}/status` | `{ agent_id, status, checked_at }` (`active` / `revoked` / `suspended`) |
+| `GET` | `/api/v1/agents/{agent_id}` | Public lookup, including owner fields and `status` when the registry returns them |
 
-Pass `getKey` in tests or offline verification. Tests in this repo mock JWKS and status so CI does not need a live registry.
+Pass `getKey` in tests or offline verification. Tests mock JWKS and status so CI does not need a live registry.
 
-Key and status caches are in memory (default TTL 1 hour). Revocation freshness is at most `min(token remaining life, cache TTL)`. `rateLimit` without a `rateLimitStore` is in-memory on this process only. It does not enforce a global cap across instances.
+Key cache is in memory (default TTL 1 hour; honour a shorter `Cache-Control` `max-age`). Revocation cache default is 60 seconds. Freshness is `min(token remaining life, cache TTL, Cache-Control max-age)`. `rateLimit` without a `rateLimitStore` is in-memory on this process only. It does not enforce a global cap across instances.
 
 Set `checkRevocation: true` when a registry is reachable. Set `lookupOwner: true` if you want `owner_name` filled from public lookup when the token omitted it.
 

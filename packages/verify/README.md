@@ -33,10 +33,26 @@ app.post(
 | `registryUrl` | `AGENTIDP_REGISTRY_URL` or `https://registry.agentidp.dev` | Base URL for JWKS, public-key, status, lookup |
 | `jwksUri` | `{registryUrl}/.well-known/jwks.json` | Override with `AGENTIDP_JWKS_URI` |
 | `getKey` | unset | Supply a key and skip the network |
-| `checkRevocation` | `false` | `GET /v1/agents/{id}/status` (also tries `/api/v1/...`) |
+| `checkRevocation` | `false` | `GET /api/v1/agents/{id}/status`. Fail closed if status is missing |
 | `lookupOwner` | `false` | If the token has no `owner_name`, fill it from public agent lookup when present |
-| `keyCacheTtlSeconds` | `3600` | In-memory JWKS / key / status cache. Freshness is `min(token remaining life, cache TTL)` |
+| `keyCacheTtlSeconds` | `3600` | JWKS / agent-key cache. Honour a shorter `Cache-Control` `max-age` |
+| `revocationCacheTtlSeconds` | `60` | Status cache. Freshness is `min(token remaining life, this TTL, Cache-Control max-age)` |
 | `rateLimit` | unset | `{ requestsPerHour, scope: "agent_id" \| "owner_id" }` |
 | `rateLimitStore` | in-memory | Without Redis/Upstash this is process-local. A warning is printed once. It does not enforce a global cap |
 
 On success the middleware sets `req.agent`, including `owner_name` when that claim is on the token (or returned by `lookupOwner`). Missing names stay `undefined`.
+
+## Registry contract
+
+Default issuer: `https://registry.agentidp.dev` via `AGENTIDP_REGISTRY_URL` or `registryUrl`.
+
+Contract locked to `/api/v1/` plus well-known JWKS (Connor, `agentidp/registry` main). There are no bare `/v1/...` routes. The registry host is not live yet; tests mock these paths.
+
+| Method | Path | Body |
+| --- | --- | --- |
+| `GET` | `/.well-known/jwks.json` | `{ keys: JWK[] }`. Registry `Cache-Control: public, max-age=86400` (verifier caps at 1h) |
+| `GET` | `/api/v1/agents/{id}/public-key` | Raw JWK. `AID-003` / `AID-004` if revoked / suspended |
+| `GET` | `/api/v1/agents/{id}/status` | `{ agent_id, status, checked_at }` where `status` is `active` / `revoked` / `suspended`. `max-age=60` |
+| `GET` | `/api/v1/agents/{id}` | Public lookup, including `owner` and `status`. Used for `lookupOwner` and as a status fallback |
+
+There is no CRL, introspect, or denylist endpoint on the current registry. Revocation is the status field. Set `checkRevocation: true` when a registry is reachable. Pass `getKey` for offline verify.

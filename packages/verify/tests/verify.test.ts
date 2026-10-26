@@ -173,7 +173,7 @@ describe("verifyAgentToken", () => {
     expect(agent.agent_id).toBe("ag_jwks");
   });
 
-  it("falls back to /v1/agents/{id}/public-key for agent-signed tokens", async () => {
+  it("falls back to /api/v1/agents/{id}/public-key for agent-signed tokens", async () => {
     const pair = await generatePair("agent-kid");
     const token = await signAit(
       pair.privateKey,
@@ -184,7 +184,7 @@ describe("verifyAgentToken", () => {
       registryUrl: "https://registry.test",
       fetch: jsonFetch({
         "https://registry.test/.well-known/jwks.json": { body: { keys: [] } },
-        "https://registry.test/v1/agents/ag_self/public-key": {
+        "https://registry.test/api/v1/agents/ag_self/public-key": {
           body: pair.publicJwk,
         },
       }),
@@ -205,7 +205,7 @@ describe("verifyAgentToken", () => {
         checkRevocation: true,
         registryUrl: "https://registry.test",
         fetch: jsonFetch({
-          "https://registry.test/v1/agents/ag_rev/status": {
+          "https://registry.test/api/v1/agents/ag_rev/status": {
             body: { agent_id: "ag_rev", status: "revoked" },
           },
         }),
@@ -225,7 +225,7 @@ describe("verifyAgentToken", () => {
       lookupOwner: true,
       registryUrl: "https://registry.test",
       fetch: jsonFetch({
-        "https://registry.test/v1/agents/ag_lookup": {
+        "https://registry.test/api/v1/agents/ag_lookup": {
           body: {
             agent_id: "ag_lookup",
             owner: {

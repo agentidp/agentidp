@@ -8,7 +8,14 @@ export {
   DEFAULT_JWKS_PATH,
   DEFAULT_KEY_CACHE_TTL_SECONDS,
   DEFAULT_REGISTRY_URL,
+  DEFAULT_REVOCATION_CACHE_TTL_SECONDS,
 } from "./types.js";
+export {
+  agentLookupUrl,
+  agentPublicKeyUrl,
+  agentStatusUrl,
+  jwksUrl,
+} from "./registry.js";
 export type {
   AccessTier,
   AgentIdErrorBody,
