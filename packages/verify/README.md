@@ -2,7 +2,11 @@
 
 Service-side verifier for AgentIDP. Check an AIT and protect Connect/Express endpoints.
 
-This package lives in the `agentidp/agentidp` workspace. It is not published to npm yet. The public name stays `@agentidp/verify` and will be used when publish is approved.
+Prepared for a public npm publish as `@agentidp/verify` `0.1.0`. The package is not on the registry until a maintainer runs the [publish checklist](../../docs/npm-publish.md). Until then, install from this workspace.
+
+```bash
+npm i @agentidp/verify
+```
 
 ```ts
 import { agentIdMiddleware } from "@agentidp/verify";

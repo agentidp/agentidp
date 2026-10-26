@@ -1,7 +1,6 @@
 {
   "name": "@agentidp/verify",
   "version": "0.1.0",
-  "private": true,
   "description": "Service-side AgentIDP verifier. Verify AITs and protect HTTP endpoints.",
   "license": "Apache-2.0",
   "type": "module",
@@ -9,20 +8,44 @@
     "node": ">=18"
   },
   "main": "./dist/index.js",
+  "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/agentidp/agentidp.git",
+    "directory": "packages/verify"
+  },
+  "homepage": "https://github.com/agentidp/agentidp/tree/main/packages/verify#readme",
+  "bugs": {
+    "url": "https://github.com/agentidp/agentidp/issues"
+  },
+  "keywords": [
+    "agentidp",
+    "ait",
+    "jwt",
+    "agent-identity",
+    "middleware"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "prepare": "tsc -p tsconfig.json",
+    "prepublishOnly": "tsc -p tsconfig.json",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
