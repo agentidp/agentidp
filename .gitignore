@@ -4,3 +4,6 @@ node_modules/
 *.log
 dist/
 .claude/
+coverage/
+.pnpm-store/
+*.tsbuildinfo
