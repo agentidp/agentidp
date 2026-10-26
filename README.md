@@ -1,6 +1,8 @@
-# AgentID Protocol
+# AgentIDP Protocol
 
 Draft specification for **agent identity tokens** (signed JWTs). This repository is protocol text under Apache 2.0. It is **not** a product, SDK, or hosted registry.
+
+The protocol name is **AgentIDP**. Do not shorten it to "AgentID" (that name is used by unrelated products).
 
 It describes a way for a service to answer:
 
@@ -24,9 +26,18 @@ Code samples in the spec are illustrative. Do not treat package names or hostnam
 
 ## How the draft works
 
-The spec defines an **Agent Identity Token (AIT)**: a signed JWT with agent identity, owner verification, capabilities, and an optional delegation chain. A service that has the issuer's public key can verify the token without a round-trip.
+The spec defines an **Agent Identity Token (AIT)**: a signed JWT with agent identity, owner verification level, capabilities, and an optional delegation chain. A service that has the issuer's public key can verify the signature without a round-trip.
 
 A registry (lookup, keys, revocation) is specified as an architecture. No public instance ships with this draft.
+
+v0.1 facts that the spec now states in one place:
+
+| Topic | v0.1 rule |
+|-------|-----------|
+| Verification levels | Integer 0–3: **Unverified** (account only), **Email** (email confirmed), **Domain** (DNS/TXT or equivalent), **Organisation** (KYB). See spec §3.2. |
+| Revocation | Not immediate on the offline path. A caching verifier learns of revocation only as fast as the shorter of remaining token lifetime and its key or status-cache TTL. See spec §4.3. |
+| Delegation | `delegation_chain` hops are asserted by the presenter, not separately signed. Known weakness. Proposed v0.2 fix: per-hop `AIT-DLG+jwt` in [`docs/design/token-minting.md`](https://github.com/agentidp/agentidp/blob/cursor/token-minting-design-c9a6/docs/design/token-minting.md) on [PR #3](https://github.com/agentidp/agentidp/pull/3). |
+| Owner identity on the AIT | `owner_id` and `owner_type` only. No `owner_name` or other owner PII on the bearer token. |
 
 Full text: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md).
 
@@ -40,7 +51,8 @@ This is the wrong repo for registry implementation, SDK work, or positioning aga
 
 | Version | Status | Focus |
 |---------|--------|-------|
-| v0.1.0 | Draft (this repo) | AIT format, verification levels, access tiers, delegation, registry shape |
+| v0.1.0 | Draft (this repo) | AIT format, verification levels, access tiers, asserted delegation, registry shape |
+| v0.2 | Design note ([PR #3](https://github.com/agentidp/agentidp/pull/3)) | Token minting, including per-hop signed delegation. File is not on `main` yet. |
 | Later | Not started | SDKs and a hosted registry stay out of this repository until the draft is reviewed |
 
 ## License
@@ -51,4 +63,5 @@ This is the wrong repo for registry implementation, SDK work, or positioning aga
 ## Links
 
 - Specification: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md)
+- v0.2 minting design note (PR #3, not on `main`): [`docs/design/token-minting.md`](https://github.com/agentidp/agentidp/blob/cursor/token-minting-design-c9a6/docs/design/token-minting.md)
 - GudLab: [gudlab.org](https://gudlab.org)

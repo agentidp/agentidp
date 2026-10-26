@@ -1,6 +1,6 @@
-# Contributing to the AgentID specification
+# Contributing to the AgentIDP specification
 
-This repository is the **protocol draft**, not a product. Contributions should improve the spec text in `spec/`.
+This repository is the **protocol draft**, not a product. Contributions should improve the spec text in `spec/`. The protocol name is **AgentIDP**. Design notes that are not yet accepted spec text go under `docs/design/`.
 
 ## How to contribute
 
