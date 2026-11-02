@@ -45,7 +45,7 @@ describe("verifyAgentToken", () => {
     expect(agent.verificationLevel).toBe(2);
   });
 
-  it("leaves owner_name undefined when the AIT has no owner_name", async () => {
+  it("leaves owner_name undefined when the AgentIDP token has no owner_name", async () => {
     const pair = await generatePair();
     const token = await signAit(
       pair.privateKey,

@@ -1,6 +1,6 @@
 # @agentidp/sdk
 
-Agent-side SDK for AgentIDP. Mint ES256 Agent Identity Tokens (AIT) with a caller-held private key.
+Agent-side SDK for AgentIDP. Mint ES256 AgentIDP tokens with a caller-held private key.
 
 Prepared for a public npm publish as `@agentidp/sdk` `0.1.0`. The package is not on the registry until a maintainer runs the [publish checklist](../../docs/npm-publish.md). Until then, install from this workspace.
 

@@ -14,7 +14,7 @@ describe("AgentAuth", () => {
     ).toThrow(/privateKey/);
   });
 
-  it("mints an ES256 AIT from a JWK private key", async () => {
+  it("mints an ES256 AgentIDP token from a JWK private key", async () => {
     const keys = await generateAgentKey("ag-test-kid");
     const auth = new AgentAuth({
       agentId: "ag_7xK9m2nP4qRtL8",

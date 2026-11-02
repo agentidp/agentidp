@@ -1,6 +1,8 @@
 # AgentIDP
 
-Open protocol for agent identity, authentication and access control. A service that verifies an Agent Identity Token (AIT) can answer:
+Not affiliated with AgentMail's AgentID (agentid.com).
+
+Open protocol for agent identity, authentication and access control. A service that verifies an AgentIDP token can answer:
 
 1. Which agent is this?
 2. Who is accountable for it?
@@ -14,8 +16,8 @@ This repository holds the protocol text and the TypeScript packages the site doc
 
 | Package | Path | Version | Role |
 | --- | --- | --- | --- |
-| [`@agentidp/sdk`](packages/sdk) | `packages/sdk` | `0.1.0` | Agent-side: mint an AIT with a caller-held private key |
-| [`@agentidp/verify`](packages/verify) | `packages/verify` | `0.1.0` | Service-side: verify an AIT and protect an HTTP route |
+| [`@agentidp/sdk`](packages/sdk) | `packages/sdk` | `0.1.0` | Agent-side: mint an AgentIDP token with a caller-held private key |
+| [`@agentidp/verify`](packages/verify) | `packages/verify` | `0.1.0` | Service-side: verify an AgentIDP token and protect an HTTP route |
 
 Both packages are prepared for a public npm publish as `0.1.0` (same version as the protocol draft). They are not on the registry until a maintainer runs [docs/npm-publish.md](docs/npm-publish.md).
 
@@ -75,7 +77,7 @@ const auth = new AgentAuth({
 });
 ```
 
-If you omit `ownerName`, the minted AIT has no `owner_name` claim. The SDK does not invent one.
+If you omit `ownerName`, the minted AgentIDP token has no `owner_name` claim. The SDK does not invent one.
 
 ### Service middleware
 
@@ -112,7 +114,7 @@ Registry contract locked to `/api/v1/` plus well-known JWKS (`agentidp/registry`
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/.well-known/jwks.json` | Registry signing keys (registry-issued tokens from `POST /api/v1/tokens/exchange`) |
-| `GET` | `/api/v1/agents/{agent_id}/public-key` | Agent public JWK for agent-signed AITs |
+| `GET` | `/api/v1/agents/{agent_id}/public-key` | Agent public JWK for agent-signed AgentIDP tokens |
 | `GET` | `/api/v1/agents/{agent_id}/status` | `{ agent_id, status, checked_at }` (`active` / `revoked` / `suspended`) |
 | `GET` | `/api/v1/agents/{agent_id}` | Public lookup, including owner fields and `status` when the registry returns them |
 
@@ -126,7 +128,9 @@ Set `checkRevocation: true` when a registry is reachable. Set `lookupOwner: true
 
 Full text: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md).
 
-An AIT is an ES256 JWT (`typ: AIT+jwt`) with agent identity, owner verification, capabilities, and an optional delegation chain. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the token without a round-trip.
+An AgentIDP token is an ES256 JWT (`typ: AIT+jwt`) with agent identity, owner verification, capabilities, and an optional delegation chain. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the token without a round-trip.
+
+Earlier drafts called this an Agent Identity Token (AIT). That name was retired because the OAuth WG uses AIT for Agent Intent Token. JWT `typ` remains `AIT+jwt`.
 
 ## Contributing
 

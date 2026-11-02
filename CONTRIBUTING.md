@@ -12,7 +12,7 @@ This repository holds the protocol draft in `spec/` and the TypeScript packages 
 ### Spec edits
 
 1. Fork this repository.
-2. Branch from `main` with a descriptive name (e.g. `docs/ait-lifetime`).
+2. Branch from `main` with a descriptive name (e.g. `docs/token-lifetime`).
 3. Edit files under `spec/`.
 4. Open a pull request with:
    - A clear title

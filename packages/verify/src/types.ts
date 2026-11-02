@@ -5,6 +5,7 @@ export const DEFAULT_JWKS_PATH = "/.well-known/jwks.json";
 export const DEFAULT_KEY_CACHE_TTL_SECONDS = 60 * 60;
 /** Status / revocation cache. Registry sends Cache-Control max-age=60. */
 export const DEFAULT_REVOCATION_CACHE_TTL_SECONDS = 60;
+/** JWT `typ` header. Historical wire value `AIT+jwt`; this is an AgentIDP token, not the OAuth WG Agent Intent Token. */
 export const AIT_TYP = "AIT+jwt";
 
 export type AccessTier = "open" | "authenticated" | "permissioned";
