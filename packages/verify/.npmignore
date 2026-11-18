@@ -1,0 +1,9 @@
+# Extra excludes on top of the package.json "files" allowlist.
+src
+tests
+vitest.config.ts
+tsconfig.json
+.env
+.env.*
+coverage
+*.tgz

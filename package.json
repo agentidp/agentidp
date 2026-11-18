@@ -1,7 +1,7 @@
 {
   "name": "agentidp",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "AgentIDP protocol specification and TypeScript packages",
   "license": "Apache-2.0",
   "packageManager": "pnpm@10.33.4",
@@ -11,6 +11,7 @@
   "scripts": {
     "build": "pnpm -r --if-present build",
     "test": "pnpm -r --if-present test",
+    "test:pack": "node scripts/check-pack.mjs",
     "typecheck": "pnpm -r --if-present typecheck",
     "lint": "pnpm -r --if-present lint"
   }

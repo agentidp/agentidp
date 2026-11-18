@@ -1,6 +1,6 @@
 {
   "name": "@agentidp/verify",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Service-side AgentIDP verifier. Verify AgentIDP tokens and protect HTTP endpoints.",
   "license": "Apache-2.0",
   "type": "module",

@@ -5,6 +5,26 @@ All notable changes to `@agentidp/sdk` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-11-18
+
+Lockstep npm cut with `@agentidp/verify`. Implements spec v0.2 and the registry `/api/v1/` contract. JWT `typ` strings stay `AIT+jwt` (minted AgentIDP token), `AIT-POP+jwt` (proof), and `AIT-DLG+jwt` (delegation hop). 0.1.0 was never published.
+
+### Added
+
+- Agent-held key: `generateAgentKeyPair` (ES256 or EdDSA). Register only the public JWK (`assertPublicJwk`, `toPublicJwk`).
+- Proof JWT: `createProofJwt` / `AgentAuth.createProofJwt` (`iss`/`sub` = agent id, `aud` = the token endpoint, max 5 minutes).
+- Token exchange: `exchangeToken` / `AgentAuth.exchangeToken` for `POST /api/v1/tokens/exchange`.
+- `registerAgentPublicKey` / `AgentAuth.registerPublicKey`.
+- Signed delegation hops: `createDelegationHop`, `decodeDelegationHop`, `hopNarrows`, `isSubset`.
+
+### Changed
+
+- When `apiKey` or `AGENTIDP_API_KEY` is set, `getToken` builds a proof JWT and calls token exchange instead of signing locally. Omit the API key to keep local mint. Local mint is not the registry path.
+
+### Breaking
+
+- Callers that passed `apiKey` expecting local mint now hit the registry.
+
 ## [0.1.0] - 2026-10-26
 
 First workspace release, prepared for a future public npm publish. Version matches protocol draft v0.1.0 and the repo root.

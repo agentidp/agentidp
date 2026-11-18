@@ -16,10 +16,10 @@ This repository holds the protocol text and the TypeScript packages the site doc
 
 | Package | Path | Version | Role |
 | --- | --- | --- | --- |
-| [`@agentidp/sdk`](packages/sdk) | `packages/sdk` | `0.1.0` | Agent-side: generate a key, build a proof JWT, call token exchange |
-| [`@agentidp/verify`](packages/verify) | `packages/verify` | `0.1.0` | Service-side: verify an AgentIDP token and protect an HTTP route |
+| [`@agentidp/sdk`](packages/sdk) | `packages/sdk` | `0.2.0` | Agent-side: generate a key, build a proof JWT, call token exchange |
+| [`@agentidp/verify`](packages/verify) | `packages/verify` | `0.2.0` | Service-side: verify an AgentIDP token and protect an HTTP route |
 
-Both packages are prepared for a public npm publish as `0.1.0` (same version as the protocol draft). They are not on the registry until a maintainer runs [docs/npm-publish.md](docs/npm-publish.md).
+Both packages are prepared for a public npm publish as `0.2.0`. They are not on the registry until a maintainer runs [docs/npm-publish.md](docs/npm-publish.md).
 
 After that publish:
 
