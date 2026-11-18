@@ -221,6 +221,7 @@ export class AgentAuth {
   }
 }
 
+/** Decode AgentIDP token claims without verifying the signature. */
 export function decodeAitClaims(token: string): AitClaims {
   const parts = token.split(".");
   if (parts.length !== 3 || !parts[1]) {

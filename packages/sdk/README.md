@@ -1,6 +1,6 @@
 # @agentidp/sdk
 
-Agent-side SDK for AgentIDP. Generate an agent key pair, build a proof JWT, and call `POST /api/v1/tokens/exchange`.
+Agent-side SDK for AgentIDP. Generate an agent key pair, build a proof JWT, and call `POST /api/v1/tokens/exchange`. Without an API key, mint an AgentIDP token locally with a caller-held private key.
 
 Prepared for a public npm publish as `@agentidp/sdk` `0.1.0`. The package is not on the registry until a maintainer runs the [publish checklist](../../docs/npm-publish.md). Until then, install from this workspace.
 

@@ -1,6 +1,6 @@
-# AgentID Competitive Landscape
+# AgentIDP Competitive Landscape
 
-> **Note (September 2026):** This file is a March 2026 research note kept for history. The public AgentID repository is a **draft specification only**. There is no public SDK and no public registry. This document is not a product comparison and is not a claim that AgentID has a full-stack implementation.
+> **Note (September 2026):** This file is a March 2026 research note kept for history. The public AgentIDP repository is a **draft specification only**. There is no public SDK and no public registry. This document is not a product comparison and is not a claim that AgentIDP has a full-stack implementation.
 
 *Last updated: March 2026 (banner added September 2026)*
 
@@ -64,9 +64,9 @@ The AI agent identity space is active but fragmented. There are 30+ efforts acro
 
 ---
 
-## Where AgentID Sits
+## Where AgentIDP Sits
 
-AgentID occupies a unique position: **open protocol with a full-stack implementation** — combining an open spec, a public registry, and commercial services. No current competitor does all three.
+AgentIDP occupies a unique position: **open protocol with a full-stack implementation** — combining an open spec, a public registry, and commercial services. No current competitor does all three.
 
 ### The Gap in the Market
 
@@ -79,7 +79,7 @@ AgentID occupies a unique position: **open protocol with a full-stack implementa
       no registry,       │                    can't become standards,
       no platform)       │                    vendor lock-in)
                          │                              │
-                         │         AgentID              │
+                         │         AgentIDP              │
                          │    ┌─────────────────┐       │
                          │    │ Open spec        │       │
                          │    │ + Public registry │       │
@@ -92,7 +92,7 @@ AgentID occupies a unique position: **open protocol with a full-stack implementa
 
 ---
 
-## AgentID Differentiators
+## AgentIDP Differentiators
 
 ### 1. Full-Stack Identity System (not just a spec, not just a product)
 
@@ -107,35 +107,35 @@ Most competitors are **one piece of the puzzle**:
 | Auth0/Descope | Full product | No open protocol, can't become a standard |
 | SPIFFE | Infrastructure identity | Not agent-specific, complex to adopt |
 
-**AgentID provides all layers**: Protocol spec (AIT format) + Registry (lookup, verification, revocation) + SDKs (agent-side and service-side) + Dashboard (management, analytics). A developer can go from zero to authenticated agent in minutes, not months.
+**AgentIDP provides all layers**: Protocol spec (AgentIDP token format) + Registry (lookup, verification, revocation) + SDKs (agent-side and service-side) + Dashboard (management, analytics). A developer can go from zero to authenticated agent in minutes, not months.
 
 ### 2. Owner Accountability as a First-Class Primitive
 
-AgentID is the only protocol where **tracing an agent back to a verified, accountable human or organisation** is built into the token format and enforced by the registry.
+AgentIDP is the only protocol where **tracing an agent back to a verified, accountable human or organisation** is built into the token format and enforced by the registry.
 
 - **Verification Levels 0–3**: from email to full KYB (Know Your Business)
-- Every AIT carries `owner_id`, `owner_type`, `owner_name`, `verification_level`
+- Every AgentIDP token carries `owner_id`, `owner_type`, `owner_name`, `verification_level`
 - Services can set minimum verification requirements (e.g., "only accept agents from domain-verified owners")
 
-**Why this matters**: When an agent spams your API or submits fraudulent data, you need to know who's behind it. OAuth tokens tell you which *app* — AgentID tells you which *agent* and which *accountable owner*.
+**Why this matters**: When an agent spams your API or submits fraudulent data, you need to know who's behind it. OAuth tokens tell you which *app* — AgentIDP tells you which *agent* and which *accountable owner*.
 
 Most competitors either don't address owner accountability (AAuth, SPIFFE, MCP Auth) or address it only for payments (Trulioo KYA, Visa TAP).
 
 ### 3. Delegation Chain Transparency
 
-AgentID's `delegation_chain` claim is a unique protocol-level feature. When Agent A spawns Agent B which calls your API, the token shows the full chain:
+AgentIDP's `delegation_chain` claim is a unique protocol-level feature. When Agent A spawns Agent B which calls your API, the token shows the full chain:
 
 ```
 User (john) → Agent A (orchestrator) → Agent B (form submitter) → Your Service
 ```
 
-Each hop has: who delegated, when, with what scopes, and how (OAuth, AIT delegation, etc.). **Scope attenuation** ensures each delegate gets equal or fewer permissions.
+Each hop has: who delegated, when, with what scopes, and how (OAuth, AgentIDP token delegation, etc.). **Scope attenuation** ensures each delegate gets equal or fewer permissions.
 
 No other protocol in the competitive landscape has this built into the token format. Google A2A has no delegation model. Auth0's M2M tokens have no chain. AAuth's proof-of-possession is single-hop.
 
 ### 4. Service-Side Access Tiers (Dead Simple Policy Model)
 
-AgentID's three-tier model gives services an immediately understandable choice:
+AgentIDP's three-tier model gives services an immediately understandable choice:
 
 | Tier | Meaning | Example |
 |------|---------|---------|
@@ -143,11 +143,11 @@ AgentID's three-tier model gives services an immediately understandable choice:
 | **Authenticated** | Any *registered* agent | General API access |
 | **Permissioned** | Only *allowlisted* agents | Partner integrations |
 
-This is a UX innovation. Compare with Auth0's scope/permission model or SPIFFE's workload policies — AgentID's tiers are something a non-technical product manager can configure.
+This is a UX innovation. Compare with Auth0's scope/permission model or SPIFFE's workload policies — AgentIDP's tiers are something a non-technical product manager can configure.
 
 ### 5. The Registry as a Network-Effect Moat
 
-AgentID's registry (`registry.agentidp.dev`) is the strategic differentiator. Once agents are registered and services verify against it:
+AgentIDP's registry (`registry.agentidp.dev`) is the strategic differentiator. Once agents are registered and services verify against it:
 
 - **Switching costs rise** — agents have established identities with history
 - **Network effects compound** — more agents registered = more services verify = more agents register
@@ -164,15 +164,15 @@ No other open protocol in this space has a registry strategy. AAuth has no regis
 
 Auth0, Stytch, and Descope are **retrofitting existing OAuth infrastructure** for agents. They model agents as "machine-to-machine clients" or "OAuth apps" — concepts designed for a different era.
 
-AgentID is designed from scratch for autonomous agents:
+AgentIDP is designed from scratch for autonomous agents:
 - Agents are first-class identities, not OAuth client IDs
-- The token format (AIT) carries agent-specific claims (capabilities, delegation, version)
+- The AgentIDP token carries agent-specific claims (capabilities, delegation, version)
 - Registration is agent-centric (register an agent, not an OAuth app)
 - Rate limiting is per-agent, not per-client
 
 ### 7. Reference Implementation from Day One
 
-ExampleForm is the first service implementing AgentID natively. This gives the protocol:
+ExampleForm is the first service implementing AgentIDP natively. This gives the protocol:
 - A real-world use case (agent form submissions)
 - A working proof of concept for other services to reference
 - Credibility — it's not vapourware
@@ -188,11 +188,11 @@ This is the playbook Auth0 ran: solve auth for your own product, then generalise
 | Threat | Risk Level | Mitigation |
 |--------|-----------|------------|
 | **Auth0/Okta adopts an open agent identity standard** | High | Move fast. Their installed base is massive. |
-| **IETF ratifies a competing spec** (Agentic JWT, SCIM Agent) | Medium | Engage with IETF, submit AgentID as an I-D, co-author with existing draft authors |
-| **Google A2A adds identity layer** | High | A2A has 50+ partners. If they add an identity system, it could dominate. Position AgentID as complementary. |
+| **IETF ratifies a competing spec** (Agentic JWT, SCIM Agent) | Medium | Engage with IETF, submit AgentIDP as an I-D, co-author with existing draft authors |
+| **Google A2A adds identity layer** | High | A2A has 50+ partners. If they add an identity system, it could dominate. Position AgentIDP as complementary. |
 | **MCP Auth evolves into full agent identity** | Medium | MCP Auth is tool-access only today. If Anthropic expands scope, they have distribution. |
 | **Dick Hardt's AAuth gains momentum** | Medium | AAuth is from the OAuth creator. If it gets IETF traction, it has credibility. Partner or differentiate. |
-| **ERC-8004 captures the decentralised crowd** | Low | Different audience (crypto-native). AgentID targets mainstream developers. |
+| **ERC-8004 captures the decentralised crowd** | Low | Different audience (crypto-native). AgentIDP targets mainstream developers. |
 
 ### What won't compete:
 - **Payment protocols** (Visa TAP, Mastercard) — payment-specific, not general-purpose
@@ -220,7 +220,7 @@ This is the playbook Auth0 ran: solve auth for your own product, then generalise
 
 Auth0, Descope, Stytch — successful *products* but will never be *standards*. No one builds their protocol on a competitor's proprietary platform.
 
-### Why open source specifically helps AgentID:
+### Why open source specifically helps AgentIDP:
 
 1. **Trust** — Services won't depend on a proprietary identity registry. Open protocol means they can always switch registries or run their own.
 2. **Adoption speed** — Developers adopt open tools faster. No procurement, no vendor approval.
@@ -254,7 +254,7 @@ This is exactly how it works for:
 
 ## Strategic Positioning Summary
 
-**AgentID is the open identity standard for AI agents — combining the credibility of an open protocol with the practicality of a managed registry and commercial services.**
+**AgentIDP is the open identity standard for AI agents — combining the credibility of an open protocol with the practicality of a managed registry and commercial services.**
 
 It is not:
 - An OAuth extension (it's purpose-built for agents)

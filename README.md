@@ -1,5 +1,7 @@
 # AgentIDP
 
+Not affiliated with AgentMail's AgentID (agentid.com).
+
 Open protocol for agent identity, authentication and access control. A service that verifies an AgentIDP token can answer:
 
 1. Which agent is this?
@@ -77,7 +79,7 @@ const auth = new AgentAuth({
 });
 ```
 
-If you omit `ownerName`, a locally minted token has no `owner_name` claim. The SDK does not invent one.
+If you omit `ownerName`, the minted AgentIDP token has no `owner_name` claim. The SDK does not invent one.
 
 ### Service middleware
 
@@ -131,7 +133,9 @@ Set `checkRevocation: true` when a registry is reachable. Set `lookupOwner: true
 
 Full text: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md). Test vectors: [`spec/vectors/token-exchange-v0.1.json`](spec/vectors/token-exchange-v0.1.json).
 
-An AgentIDP token is an ES256 JWT. The wire `typ` is `AIT+jwt` (kept for registry compatibility; the AIT acronym is retired in prose). Claims include agent identity, owner verification, capabilities, required `aud`, and `cnf.jkt` on tokens minted by exchange. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the token without a round-trip. Resource-server DPoP is not implemented.
+An AgentIDP token is an ES256 JWT (`typ: AIT+jwt`) with agent identity, owner verification, capabilities, required `aud`, and `cnf.jkt` on tokens minted by exchange. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the token without a round-trip. Resource-server DPoP is not implemented.
+
+Earlier drafts called this an Agent Identity Token (AIT). That name was retired because the OAuth WG uses AIT for Agent Intent Token. JWT `typ` remains `AIT+jwt`. Proof JWTs use `AIT-POP+jwt`. Delegation hops use `AIT-DLG+jwt`. Those strings are wire identifiers.
 
 ## Contributing
 

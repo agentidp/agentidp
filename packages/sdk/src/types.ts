@@ -7,7 +7,7 @@ export const MIN_TOKEN_LIFETIME_SECONDS = 60;
 
 /**
  * Wire JWT `typ` for a registry-issued AgentIDP token.
- * Human-readable name is "AgentIDP token"; this string is kept for registry compatibility.
+ * Historical wire value `AIT+jwt`; this is an AgentIDP token, not the OAuth WG Agent Intent Token.
  */
 export const AGENTIDP_TOKEN_TYP = "AIT+jwt";
 /** Wire JWT `typ` for an agent proof JWT presented at token exchange. */
@@ -125,6 +125,7 @@ export interface DelegationEntry {
   evidence?: string;
 }
 
+/** Claims carried by an AgentIDP token. */
 export interface AitClaims {
   agent_id: string;
   agent_name?: string;
