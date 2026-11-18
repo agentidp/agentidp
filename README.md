@@ -66,20 +66,19 @@ await fetch("https://api.example.com/submit", {
 });
 ```
 
-When `apiKey` is set, `getToken` builds a proof JWT and calls `POST /api/v1/tokens/exchange`. Without it, `AgentAuth` still signs locally with the agent private key (PEM or JWK). Pass optional owner fields at construct time when you want them on a locally minted token:
+When `apiKey` is set, `getToken` builds a proof JWT and calls `POST /api/v1/tokens/exchange`. Without it, `AgentAuth` still signs locally with the agent private key (PEM or JWK). Pass optional owner fields at construct time when you want them on a locally minted token. `verificationLevel` is an integer 0–3. Do not pass a name string.
 
 ```ts
 const auth = new AgentAuth({
   agentId: "ag_7xK9m2nP4qRtL8",
   privateKey: process.env.AGENT_PRIVATE_KEY,
   ownerId: "own_T1mR4xBq9",
-  ownerName: "Acme Inc",
   ownerType: "org",
-  verificationLevel: "domain",
+  verificationLevel: 2,
 });
 ```
 
-If you omit `ownerName`, the minted AgentIDP token has no `owner_name` claim. The SDK does not invent one.
+`owner_name` is not a protocol claim. The SDK does not require it and does not invent one. Owner display info comes from registry lookup; for Level 2+ the protocol field is `verified_domain`.
 
 ### Service middleware
 
@@ -94,12 +93,12 @@ app.post(
     rateLimit: { requestsPerHour: 100, scope: "agent_id" },
   }),
   (req, res) => {
-    console.log(req.agent.owner_name);
+    console.log(req.agent.agent_id, req.agent.owner_id);
   },
 );
 ```
 
-`req.agent` carries `agent_id` and, when present on the token, `owner_name` plus the other owner claims. Use `verifyAgentToken(token, options)` outside Express.
+`req.agent` carries `agent_id` and `owner_id` when those claims are on the token. `owner_name` is not required. Use `verifyAgentToken(token, options)` outside Express.
 
 ## Live registry
 
@@ -125,17 +124,24 @@ Registry contract locked to `/api/v1/` plus well-known JWKS (`agentidp/registry`
 
 Pass `getKey` in tests or offline verification. Tests mock JWKS and status so CI does not need a live registry.
 
-Key cache is in memory (default TTL 1 hour; honour a shorter `Cache-Control` `max-age`). Revocation cache default is 60 seconds. Freshness is `min(token remaining life, cache TTL, Cache-Control max-age)`. `rateLimit` without a `rateLimitStore` is in-memory on this process only. It does not enforce a global cap across instances.
+Key cache is in memory (default TTL 1 hour; honour a shorter `Cache-Control` `max-age`). JWKS cache recommendation is 1 hour in the spec and in this verifier. Revocation cache default is 60 seconds. Freshness is `min(token remaining life, cache TTL, Cache-Control max-age)`. Revocation is not immediate on the cached path. `rateLimit` without a `rateLimitStore` is in-memory on this process only. It does not enforce a global cap across instances.
 
-Set `checkRevocation: true` when a registry is reachable. Set `lookupOwner: true` if you want `owner_name` filled from public lookup when the token omitted it.
+Set `checkRevocation: true` when a registry is reachable. Set `lookupOwner: true` to fill `verified_domain` (and `owner_id` / `owner_type`) from public lookup. Lookup does not copy `owner_name`.
 
 ## Specification
 
 Full text: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md). Test vectors: [`spec/vectors/token-exchange-v0.1.json`](spec/vectors/token-exchange-v0.1.json).
 
-An AgentIDP token is an ES256 JWT (`typ: AIT+jwt`) with agent identity, owner verification, capabilities, required `aud`, and `cnf.jkt` on tokens minted by exchange. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the token without a round-trip. Resource-server DPoP is not implemented.
+An AgentIDP token is an ES256 JWT (`typ: AIT+jwt`) with agent identity, integer `verification_level` 0–3, capabilities, required `aud`, and `cnf.jkt` on tokens minted by exchange. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the signature without a round-trip. Resource-server DPoP (`DPoP` header, `htm`/`htu`/`ath`) is not implemented. Related IETF drafts (RFC 8693, RFC 9421, Web Bot Auth, WIMSE, AAuth) are related work, not profiles of this spec.
 
-Earlier drafts called this an Agent Identity Token (AIT). That name was retired because the OAuth WG uses AIT for Agent Intent Token. JWT `typ` remains `AIT+jwt`. Proof JWTs use `AIT-POP+jwt`. Delegation hops use `AIT-DLG+jwt`. Those strings are wire identifiers.
+| Topic | v0.1 rule |
+| --- | --- |
+| Verification levels | Integer 0–3: Unverified (email unconfirmed), Email (email confirmed), Domain, Organisation. Names are prose only. |
+| Revocation | Not immediate on the offline path. Effective latency is `min(remaining token TTL, verifier cache TTL)`. JWKS cache recommendation: 1 hour. |
+| Delegation | Signed narrowing hops (`AIT-DLG+jwt`) required at exchange. Unsigned v0.1 JSON hops are superseded and rejected. |
+| Owner identity on the token | `owner_id` and `owner_type` only. Display names come from registry lookup (`verified_domain` at Level 2+). |
+
+Earlier drafts used a three-letter token name that collides with the OAuth WG Agent Intent Token. JWT `typ` remains `AIT+jwt`. Proof JWTs use `AIT-POP+jwt`. Delegation hops use `AIT-DLG+jwt`. Those strings are wire identifiers.
 
 ## Contributing
 

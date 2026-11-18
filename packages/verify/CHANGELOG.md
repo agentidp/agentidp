@@ -34,11 +34,14 @@ First workspace release, prepared for a future public npm publish. Version match
 - `AgentIdError` codes (`AID-001` through `AID-011`, plus `AID-013`, `AID-014`, `AID-016`, `AID-017`)
 - Registry wire `typ` is `AIT+jwt`. Verifiers also accept `agentidp+jwt` as an alias.
 - When `cnf.jkt` is present, format checks and optional consistency with `confirmationJwk` / `expectedJkt`
+- `lookupOwner` fills `verified_domain` from public lookup. It does not copy `owner_name`.
 
 ### Changed
 
 - `aud` is required by default (`requireAudience` defaults to `true`). Missing `aud` is `AID-011`. Set `requireAudience: false` for tokens minted before this rule.
 - Error messages name the credential an AgentIDP token.
+- `verification_level` on `VerifiedAgent` is the integer 0–3. Name strings are not the claim format.
+- `owner_name` is optional. Absence is accepted. Display names come from `verified_domain` on registry lookup.
 
 ### Breaking
 

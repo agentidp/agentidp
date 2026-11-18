@@ -32,8 +32,9 @@ function writeError(res: AgentIdResponse, error: AgentIdError): void {
 }
 
 /**
- * Connect/Express-style middleware. Attaches `req.agent` on success,
- * including `owner_name` when that claim is present on the token.
+ * Connect/Express-style middleware. Attaches `req.agent` on success.
+ * `owner_name` is not required. Display names come from registry lookup
+ * (`verified_domain` at Level 2+).
  */
 export function agentIdMiddleware(options: AgentIdMiddlewareOptions = {}) {
   const accessTier = options.accessTier ?? "authenticated";

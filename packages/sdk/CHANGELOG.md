@@ -33,7 +33,7 @@ First workspace release, prepared for a future public npm publish. Version match
 
 - `AgentAuth` to mint ES256 AgentIDP tokens with a caller-held private key
 - `getToken({ audience, capabilities?, expiresInSeconds? })` with a 24-hour maximum lifetime (default 1 hour)
-- Optional agent and owner claims (`agent_name`, `owner_id`, `owner_name`, `owner_type`, `verification_level`)
+- Optional agent and owner claims (`agent_name`, `owner_id`, `owner_type`, integer `verification_level` 0–3). `owner_name` is not a protocol claim and is omitted unless the caller supplies it for local mint.
 - `decodeAitClaims` and `importPrivateKey` helpers
 - `generateAgentKeyPair` (ES256 or EdDSA). Register only the public JWK
 - `createProofJwt` and `AgentAuth.createProofJwt` (iss/sub = agent id, aud = token endpoint, max 5 minutes)
@@ -46,6 +46,7 @@ First workspace release, prepared for a future public npm publish. Version match
 
 - When `apiKey` or `AGENTIDP_API_KEY` is set, `getToken` calls token exchange with a proof JWT instead of signing locally. Without an API key, `getToken` still signs locally. Local mint is not the registry path.
 - Proof, hop, and minted-token JWT `typ` values match the registry wire identifiers: `AIT-POP+jwt`, `AIT-DLG+jwt`, and `AIT+jwt`. The human-readable name is AgentIDP token.
+- `verificationLevel` is an integer 0–3. Name strings such as `"domain"` are not accepted.
 
 ### Breaking
 

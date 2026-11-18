@@ -38,6 +38,6 @@ When `apiKey` or `AGENTIDP_API_KEY` is set, `getToken` signs a proof JWT (`iss`/
 | `fetch` | no | Injected fetch for tests |
 | `keyId` | no | JWT `kid`. Falls back to the JWK `kid`, then `agentId` |
 | `agentName`, `agentVersion`, `agentDescription` | no | Copied onto a locally minted token when set |
-| `ownerId`, `ownerName`, `ownerType`, `verificationLevel` | no | Copied onto a locally minted token when set. `owner_name` is omitted when `ownerName` is not supplied |
+| `ownerId`, `ownerType`, `verificationLevel` | no | Copied onto a locally minted token when set. `verificationLevel` is an integer 0–3. `owner_name` is not a protocol claim and is omitted unless the caller passes `ownerName` for local mint. |
 
 `getToken({ audience, capabilities?, expiresInSeconds?, delegationChain? })` requires a non-empty `audience`. Maximum minted lifetime is 24 hours (default 1 hour). `capabilities` maps to exchange `scopes`.

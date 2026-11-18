@@ -10,26 +10,32 @@ import { generatePair, jsonFetch, signAit } from "./helpers.js";
 import { generateAgentKey } from "../../sdk/tests/helpers.js";
 
 describe("parseVerificationLevel", () => {
-  it("maps site names and integers", () => {
-    expect(parseVerificationLevel("domain")).toBe(2);
+  it("maps integers 0–3 and numeric strings", () => {
+    expect(parseVerificationLevel(0)).toBe(0);
+    expect(parseVerificationLevel(1)).toBe(1);
     expect(parseVerificationLevel(2)).toBe(2);
-    expect(parseVerificationLevel("email")).toBe(1);
-    expect(parseVerificationLevel("unverified")).toBe(0);
-    expect(parseVerificationLevel("organisation")).toBe(3);
+    expect(parseVerificationLevel(3)).toBe(3);
+    expect(parseVerificationLevel("2")).toBe(2);
     expect(parseVerificationLevel(undefined)).toBe(0);
+  });
+
+  it("does not treat name strings as the claim value", () => {
+    expect(parseVerificationLevel("domain")).toBe(0);
+    expect(parseVerificationLevel("email")).toBe(0);
+    expect(parseVerificationLevel("unverified")).toBe(0);
+    expect(parseVerificationLevel("organisation")).toBe(0);
   });
 });
 
 describe("verifyAgentToken", () => {
-  it("accepts a token minted by AgentAuth and exposes owner_name", async () => {
+  it("accepts a token minted by AgentAuth without owner_name", async () => {
     const keys = await generateAgentKey("sdk-kid");
     const auth = new AgentAuth({
       agentId: "ag_7xK9m2nP4qRtL8",
       privateKey: keys.privateJwk,
       ownerId: "own_T1mR4xBq9",
-      ownerName: "Acme Inc",
       ownerType: "org",
-      verificationLevel: "domain",
+      verificationLevel: 2,
     });
     const token = await auth.getToken({ audience: "https://api.example.com" });
 
@@ -40,9 +46,10 @@ describe("verifyAgentToken", () => {
     });
 
     expect(agent.agent_id).toBe("ag_7xK9m2nP4qRtL8");
-    expect(agent.owner_name).toBe("Acme Inc");
+    expect(agent.owner_name).toBeUndefined();
     expect(agent.owner_id).toBe("own_T1mR4xBq9");
     expect(agent.verificationLevel).toBe(2);
+    expect(agent.verification_level).toBe(2);
   });
 
   it("leaves owner_name undefined when the AgentIDP token has no owner_name", async () => {
@@ -120,7 +127,7 @@ describe("verifyAgentToken", () => {
       {
         agent_id: "ag_lvl",
         aud: "https://api.example.com",
-        verification_level: "email",
+        verification_level: 1,
       },
       pair.kid,
     );
@@ -213,7 +220,7 @@ describe("verifyAgentToken", () => {
     ).rejects.toMatchObject({ code: "AID-003" });
   });
 
-  it("fills owner_name from optional lookup when the token omits it", async () => {
+  it("fills verified_domain from optional lookup and leaves owner_name unset", async () => {
     const pair = await generatePair();
     const token = await signAit(
       pair.privateKey,
@@ -233,12 +240,35 @@ describe("verifyAgentToken", () => {
               owner_name: "Looked Up Org",
               owner_type: "org",
               verification_level: 2,
+              verified_domain: "look.example",
             },
           },
         },
       }),
     });
-    expect(agent.owner_name).toBe("Looked Up Org");
+    expect(agent.owner_name).toBeUndefined();
     expect(agent.owner_id).toBe("own_look");
+    expect(agent.verified_domain).toBe("look.example");
+    expect(agent.verification_level).toBe(2);
+  });
+
+  it("tolerates a leftover owner_name claim without requiring it", async () => {
+    const pair = await generatePair();
+    const token = await signAit(
+      pair.privateKey,
+      {
+        agent_id: "ag_legacy_name",
+        aud: "https://api.example.com",
+        owner_name: "Leftover Name",
+        verification_level: 2,
+      },
+      pair.kid,
+    );
+    const agent = await verifyAgentToken(token, {
+      getKey: () => pair.publicJwk,
+      audience: "https://api.example.com",
+    });
+    expect(agent.owner_name).toBe("Leftover Name");
+    expect(agent.verification_level).toBe(2);
   });
 });

@@ -25,7 +25,11 @@ export const MAX_DELEGATION_DEPTH = 8;
 
 export type OwnerType = "person" | "org";
 
-export type VerificationLevelInput = number | string;
+/** Integer 0–3 as in spec §3.2. Names (Unverified, Email, Domain, Organisation) are prose only. */
+export type VerificationLevel = 0 | 1 | 2 | 3;
+
+/** @deprecated Use {@link VerificationLevel}. The claim is an integer 0–3. */
+export type VerificationLevelInput = VerificationLevel;
 
 export type AgentSigningAlg = "ES256" | "EdDSA";
 
@@ -69,9 +73,14 @@ export interface AgentAuthOptions {
   agentVersion?: string;
   agentDescription?: string;
   ownerId?: string;
+  /**
+   * Not a protocol claim. Registry-issued tokens MUST NOT include `owner_name`.
+   * Copied onto a locally minted token only when the caller supplies it.
+   */
   ownerName?: string;
   ownerType?: OwnerType;
-  verificationLevel?: VerificationLevelInput;
+  /** Integer 0–3. Do not pass a name string such as `"domain"`. */
+  verificationLevel?: VerificationLevel;
 }
 
 export interface GetTokenOptions {
@@ -133,8 +142,10 @@ export interface AitClaims {
   agent_description?: string;
   owner_id?: string;
   owner_type?: OwnerType;
+  /** Leftover non-normative claim. Verifiers MUST tolerate absence. */
   owner_name?: string;
-  verification_level?: VerificationLevelInput;
+  /** Integer 0–3. */
+  verification_level?: VerificationLevel;
   capabilities?: string[];
   delegation_chain?: DelegationEntry[] | string[];
   cnf?: Confirmation;

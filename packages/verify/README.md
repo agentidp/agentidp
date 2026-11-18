@@ -19,7 +19,7 @@ app.post(
     rateLimit: { requestsPerHour: 100, scope: "agent_id" },
   }),
   (req, res) => {
-    console.log(req.agent.owner_name);
+    console.log(req.agent.agent_id, req.agent.owner_id);
   },
 );
 ```
@@ -31,7 +31,7 @@ app.post(
 | Option | Default | Notes |
 | --- | --- | --- |
 | `accessTier` | `authenticated` | `open` (token optional), `authenticated`, `permissioned` (allowlist of `agent_id` or `owner_id`) |
-| `minVerificationLevel` | `0` | Integer 0–3. Token claim `"domain"` maps to `2` |
+| `minVerificationLevel` | `0` | Integer 0–3. Token `verification_level` MUST be that integer, not a name string |
 | `audience` | unset | When set, `aud` must match this value |
 | `requireAudience` | `true` | Token MUST include `aud`. Missing `aud` is `AID-011`. Set `false` only for tokens minted before this rule |
 | `confirmationJwk` | unset | When the token has `cnf.jkt`, it MUST match this JWK's SHA-256 thumbprint |
@@ -41,13 +41,13 @@ app.post(
 | `jwksUri` | `{registryUrl}/.well-known/jwks.json` | Override with `AGENTIDP_JWKS_URI` |
 | `getKey` | unset | Supply a key and skip the network |
 | `checkRevocation` | `false` | `GET /api/v1/agents/{id}/status`. Fail closed if status is missing |
-| `lookupOwner` | `false` | If the token has no `owner_name`, fill it from public agent lookup when present |
+| `lookupOwner` | `false` | Fill `verified_domain`, `owner_id`, and `owner_type` from public agent lookup. Does not copy `owner_name` |
 | `keyCacheTtlSeconds` | `3600` | JWKS / agent-key cache. Honour a shorter `Cache-Control` `max-age` |
 | `revocationCacheTtlSeconds` | `60` | Status cache. Freshness is `min(token remaining life, this TTL, Cache-Control max-age)` |
 | `rateLimit` | unset | `{ requestsPerHour, scope: "agent_id" \| "owner_id" }` |
 | `rateLimitStore` | in-memory | Without Redis/Upstash this is process-local. A warning is printed once. It does not enforce a global cap |
 
-On success the middleware sets `req.agent`, including `owner_name` when that claim is on the token (or returned by `lookupOwner`). Missing names stay `undefined`.
+On success the middleware sets `req.agent`. `owner_name` is not required. If a leftover token still carries it, it is copied through; lookup uses `verified_domain` (Level 2+) as the protocol display field.
 
 ## Registry contract
 
@@ -62,4 +62,4 @@ Contract locked to `/api/v1/` plus well-known JWKS (Connor, `agentidp/registry` 
 | `GET` | `/api/v1/agents/{id}/status` | `{ agent_id, status, checked_at }` where `status` is `active` / `revoked` / `suspended`. `max-age=60` |
 | `GET` | `/api/v1/agents/{id}` | Public lookup, including `owner` and `status`. Used for `lookupOwner` and as a status fallback |
 
-There is no CRL, introspect, or denylist endpoint on the current registry. Revocation is the status field. Set `checkRevocation: true` when a registry is reachable. Pass `getKey` for offline verify.
+There is no CRL, introspect, or denylist endpoint on the current registry. Revocation is the status field. It is not immediate for a caching verifier: freshness is `min(remaining token TTL, cache TTL, Cache-Control max-age)`. JWKS cache recommendation is 1 hour (a longer registry `max-age` is capped). Set `checkRevocation: true` when a registry is reachable. Pass `getKey` for offline verify. This package does not verify a resource-server DPoP proof.

@@ -22,9 +22,8 @@ describe("AgentAuth", () => {
       registryUrl: "https://registry.agentidp.dev",
       agentName: "AcmeBookingAgent",
       ownerId: "own_T1mR4xBq9",
-      ownerName: "Acme Inc",
       ownerType: "org",
-      verificationLevel: "domain",
+      verificationLevel: 2,
     });
 
     const token = await auth.getToken({
@@ -42,10 +41,10 @@ describe("AgentAuth", () => {
     expect(payload.sub).toBe("ag_7xK9m2nP4qRtL8");
     expect(payload.aud).toBe("https://api.example.com");
     expect(payload.iss).toBe("https://registry.agentidp.dev");
-    expect(payload.owner_name).toBe("Acme Inc");
+    expect(payload.owner_name).toBeUndefined();
     expect(payload.owner_id).toBe("own_T1mR4xBq9");
     expect(payload.owner_type).toBe("org");
-    expect(payload.verification_level).toBe("domain");
+    expect(payload.verification_level).toBe(2);
     expect(payload.capabilities).toEqual(["form:submit", "calendar:read"]);
     expect(payload.jti).toMatch(/^tok_/);
     expect(payload.exp - payload.iat).toBe(3600);
@@ -88,6 +87,18 @@ describe("AgentAuth", () => {
     const payload = decodeAitClaims(token);
     expect(payload.owner_name).toBeUndefined();
     expect(payload.owner_id).toBeUndefined();
+  });
+
+  it("rejects a verificationLevel outside 0–3", async () => {
+    const keys = await generateAgentKey();
+    const auth = new AgentAuth({
+      agentId: "ag_lvl",
+      privateKey: keys.privateJwk,
+      verificationLevel: 4 as 0,
+    });
+    await expect(
+      auth.getToken({ audience: "https://api.example.com" }),
+    ).rejects.toThrow(/0–3/);
   });
 
   it("rejects lifetimes above 24h", async () => {
