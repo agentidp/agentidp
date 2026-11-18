@@ -3,6 +3,7 @@ import type { JWK } from "jose";
 export const DEFAULT_REGISTRY_URL = "https://registry.agentidp.dev";
 export const MAX_TOKEN_LIFETIME_SECONDS = 24 * 60 * 60;
 export const DEFAULT_TOKEN_LIFETIME_SECONDS = 60 * 60;
+/** JWT `typ` header. Historical wire value `AIT+jwt`; this is an AgentIDP token, not the OAuth WG Agent Intent Token. */
 export const AIT_TYP = "AIT+jwt";
 
 export type OwnerType = "person" | "org";
@@ -41,6 +42,7 @@ export interface DelegationEntry {
   evidence?: string;
 }
 
+/** Claims carried by an AgentIDP token. */
 export interface AitClaims {
   agent_id: string;
   agent_name?: string;

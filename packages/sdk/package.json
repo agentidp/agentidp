@@ -1,7 +1,7 @@
 {
   "name": "@agentidp/sdk",
   "version": "0.1.0",
-  "description": "Agent-side AgentIDP SDK. Mint ES256 Agent Identity Tokens (AIT).",
+  "description": "Agent-side AgentIDP SDK. Mint ES256 AgentIDP tokens.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
@@ -37,7 +37,6 @@
   },
   "keywords": [
     "agentidp",
-    "ait",
     "jwt",
     "agent-identity"
   ],

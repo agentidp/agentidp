@@ -39,14 +39,14 @@ function resolveLifetime(expiresInSeconds?: number): number {
   }
   if (lifetime > MAX_TOKEN_LIFETIME_SECONDS) {
     throw new Error(
-      `AIT lifetime must be at most ${MAX_TOKEN_LIFETIME_SECONDS} seconds (24h)`,
+      `AgentIDP token lifetime must be at most ${MAX_TOKEN_LIFETIME_SECONDS} seconds (24h)`,
     );
   }
   return Math.trunc(lifetime);
 }
 
 /**
- * Mint Agent Identity Tokens with a caller-held ES256 private key.
+ * Mint AgentIDP tokens with a caller-held ES256 private key.
  * No network call is required when the private key is already available.
  */
 export class AgentAuth {
@@ -137,6 +137,7 @@ export class AgentAuth {
   }
 }
 
+/** Decode AgentIDP token claims without verifying the signature. */
 export function decodeAitClaims(token: string): AitClaims {
   const parts = token.split(".");
   if (parts.length !== 3 || !parts[1]) {

@@ -4,8 +4,8 @@ export const ERRORS: Record<
   AgentIdErrorCode,
   { status: number; message: string }
 > = {
-  "AID-001": { status: 401, message: "AIT signature verification failed" },
-  "AID-002": { status: 401, message: "AIT has exceeded its exp claim" },
+  "AID-001": { status: 401, message: "AgentIDP token signature verification failed" },
+  "AID-002": { status: 401, message: "AgentIDP token has exceeded its exp claim" },
   "AID-003": { status: 403, message: "Agent has been revoked in the registry" },
   "AID-004": { status: 403, message: "Agent is temporarily suspended" },
   "AID-005": {

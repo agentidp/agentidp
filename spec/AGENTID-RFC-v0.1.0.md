@@ -1,11 +1,11 @@
-# AgentID Protocol Specification
+# AgentIDP Protocol Specification
 
 **Open Specification for Agent Identity, Authentication & Access Control**
 
 | Field | Value |
 |-------|-------|
 | **Version** | 0.1.0 |
-| **Status** | Draft specification (not a product) |
+| **Status** | AgentIDP token draft (v0.1) |
 | **Date** | 19 September 2026 |
 | **Authors** | Timchosen Uzua |
 | **Published by** | GudLab \| gudlab.org |
@@ -34,7 +34,7 @@
 
 ## 1. Executive Summary
 
-The AgentID Protocol defines an open standard for establishing, verifying, and managing the identity of autonomous AI agents operating across the internet. As AI agents increasingly interact with web services, APIs, and each other on behalf of humans and organisations, the industry lacks a universal mechanism to answer three fundamental questions:
+The AgentIDP protocol defines an open standard for establishing, verifying, and managing the identity of autonomous AI agents operating across the internet. As AI agents increasingly interact with web services, APIs, and each other on behalf of humans and organisations, the industry lacks a universal mechanism to answer three fundamental questions:
 
 - **Which agent is this?**
 - **Who is accountable for it?**
@@ -44,7 +44,7 @@ This draft specifies a lightweight, cryptographically verifiable identity layer 
 
 This specification defines:
 
-- (a) the **Agent Identity Token (AIT)** format
+- (a) the **AgentIDP token** format
 - (b) the **Agent Registration and Verification** process
 - (c) the **Agent Registry** architecture
 - (d) **Access control and delegation** mechanisms
@@ -96,9 +96,11 @@ The protocol MUST satisfy the following requirements:
 
 ## 3. Protocol Specification
 
-### 3.1 Agent Identity Token (AIT)
+### 3.1 AgentIDP token
 
-The Agent Identity Token is a signed JSON Web Token (JWT) conforming to [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519), with a custom claim set designed for agent identification. The token is self-contained: any service with access to the issuer's public key can verify the token without contacting the registry.
+The AgentIDP token is a signed JSON Web Token (JWT) conforming to [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519), with a custom claim set designed for agent identification. The token is self-contained: any service with access to the issuer's public key can verify the token without contacting the registry.
+
+JWT `typ` remains `AIT+jwt`. That historical wire value is unchanged so existing tokens keep verifying.
 
 #### 3.1.1 Token Structure
 
@@ -115,7 +117,7 @@ The Agent Identity Token is a signed JSON Web Token (JWT) conforming to [RFC 751
 | Field | Status | Description |
 |-------|--------|-------------|
 | `alg` | REQUIRED | ECDSA P-256 |
-| `typ` | REQUIRED | Agent Identity Token |
+| `typ` | REQUIRED | AgentIDP token. Wire value is `AIT+jwt` (historical; unchanged for interoperability) |
 | `kid` | REQUIRED | Key ID for rotation |
 
 **Payload (Claims)**
@@ -182,17 +184,17 @@ The Agent Identity Token is a signed JSON Web Token (JWT) conforming to [RFC 751
 
 #### 3.1.2 Cryptographic Requirements
 
-All Agent Identity Tokens MUST be signed using **ES256** (ECDSA with P-256 curve and SHA-256). This algorithm provides strong security with compact signatures, making it well-suited for high-frequency agent-to-service communication. RSA-based algorithms are explicitly excluded to keep token sizes small.
+All AgentIDP tokens MUST be signed using **ES256** (ECDSA with P-256 curve and SHA-256). This algorithm provides strong security with compact signatures, making it well-suited for high-frequency agent-to-service communication. RSA-based algorithms are explicitly excluded to keep token sizes small.
 
 Agent key pairs are generated during registration and the public key is published in the Agent Registry. Services verify tokens by fetching the public key via the registry's JWKS endpoint, with aggressive caching (RECOMMENDED TTL: 24 hours).
 
 #### 3.1.3 Token Lifetime
 
-AIT tokens MUST have a maximum lifetime of 24 hours. For high-security contexts, a lifetime of 1 hour or less is RECOMMENDED. Short-lived tokens limit the blast radius of key compromise. Agents MUST implement automatic token refresh using their private key.
+AgentIDP tokens MUST have a maximum lifetime of 24 hours. For high-security contexts, a lifetime of 1 hour or less is RECOMMENDED. Short-lived tokens limit the blast radius of key compromise. Agents MUST implement automatic token refresh using their private key.
 
 ### 3.2 Owner Verification Levels
 
-The AgentID protocol defines four verification levels, each providing increasing assurance about the agent owner's identity. Services can set minimum verification requirements per endpoint or form.
+The AgentIDP protocol defines four verification levels, each providing increasing assurance about the agent owner's identity. Services can set minimum verification requirements per endpoint or form.
 
 | Level | Name | Verification Method | Use Case |
 |-------|------|---------------------|----------|
@@ -207,7 +209,7 @@ Agent registration is a two-phase process: owner verification (performed once) f
 
 **Phase 1: Owner Registration**
 
-1. Owner signs up at an AgentID-compliant registry. This draft uses `registry.agentidp.dev` as an example hostname; it is not a public service in this version.
+1. Owner signs up at an AgentIDP-compliant registry. This draft uses `registry.agentidp.dev` as an example hostname; it is not a public service in this version.
 2. Owner completes verification to their desired level (email, domain DNS, or KYB document submission).
 3. Registry issues an `owner_id` and an owner API key for agent management operations.
 
@@ -215,25 +217,25 @@ Agent registration is a two-phase process: owner verification (performed once) f
 
 1. Owner calls `POST /v1/agents` with agent name, description, and declared capabilities.
 2. Registry generates a key pair (ES256), stores the public key, and returns the `agent_id`, `agent_secret` (private key in JWK format), and the `kid`.
-3. Agent uses the private key to self-sign AIT tokens for authentication. The agent secret never leaves the owner's infrastructure after initial provisioning.
+3. Agent uses the private key to self-sign AgentIDP tokens for authentication. The agent secret never leaves the owner's infrastructure after initial provisioning.
 
 > **Security Note:** The agent's private key is generated server-side during registration and delivered once. Owners SHOULD immediately store it in a secrets manager. The registry does NOT retain the private key. If lost, the agent must be re-registered with a new key pair. Future versions of the spec may support client-side key generation with CSR upload.
 
 ### 3.4 Service-Side Access Control
 
-Services consuming AgentID tokens implement access policies based on the claims present in the AIT. The protocol defines three standard access tiers that services MAY adopt:
+Services consuming AgentIDP tokens implement access policies based on the claims present in the AgentIDP token. The protocol defines three standard access tiers that services MAY adopt:
 
 #### 3.4.1 Access Tiers
 
 | Tier | Description | Rate Limiting | Use Case |
 |------|-------------|---------------|----------|
-| **Open** | Any agent may access. No AIT required. | IP-based only | Public forms, read-only APIs, open data |
-| **Authenticated** | Valid AIT from any registered agent required. Token signature and revocation status verified. | Per `agent_id` | General-purpose APIs, standard forms |
-| **Permissioned** | Valid AIT required AND `agent_id` or `owner_id` must be on an explicit allowlist. | Per `agent_id` | Partner integrations, sensitive data, high-value transactions |
+| **Open** | Any agent may access. No AgentIDP token required. | IP-based only | Public forms, read-only APIs, open data |
+| **Authenticated** | Valid AgentIDP token from any registered agent required. Token signature and revocation status verified. | Per `agent_id` | General-purpose APIs, standard forms |
+| **Permissioned** | Valid AgentIDP token required AND `agent_id` or `owner_id` must be on an explicit allowlist. | Per `agent_id` | Partner integrations, sensitive data, high-value transactions |
 
 #### 3.4.2 Policy Expression
 
-Services define policies as a set of rules evaluated against AIT claims. The protocol RECOMMENDS the following policy structure:
+Services define policies as a set of rules evaluated against AgentIDP token claims. The protocol RECOMMENDS the following policy structure:
 
 ```json
 {
@@ -252,7 +254,7 @@ Services define policies as a set of rules evaluated against AIT claims. The pro
 
 ### 3.5 Delegation Chain
 
-A critical feature of the AgentID protocol is transparent delegation. When Agent A instructs Agent B to perform an action, or when a human user authorises an agent to act on their behalf, the delegation chain is encoded in the AIT so that the receiving service can inspect the full provenance of the request.
+A critical feature of the AgentIDP protocol is transparent delegation. When Agent A instructs Agent B to perform an action, or when a human user authorises an agent to act on their behalf, the delegation chain is encoded in the AgentIDP token so that the receiving service can inspect the full provenance of the request.
 
 #### 3.5.1 Delegation Chain Structure
 
@@ -279,6 +281,8 @@ The `delegation_chain` claim is an ordered array of delegation objects, from the
 }
 ```
 
+The evidence value `"ait:delegation"` is a historical wire string for agent-to-agent delegation. It is not a token type name.
+
 #### 3.5.2 Scope Attenuation
 
 Each link in the delegation chain MUST have scopes that are equal to or a strict subset of the previous link's scopes. A delegate cannot grant more permissions than it received. This is enforced by both the issuing agent (when constructing the token) and the verifying service (when validating claims).
@@ -303,7 +307,7 @@ The registry exposes a RESTful API with the following core endpoints:
 | `DELETE` | `/v1/agents/{agent_id}` | Revoke an agent (owner auth required) |
 | `GET` | `/.well-known/jwks.json` | Registry JWKS endpoint |
 | `GET` | `/v1/agents/{agent_id}/status` | Revocation check (real-time) |
-| `POST` | `/v1/tokens/exchange` | Exchange owner credentials for AIT |
+| `POST` | `/v1/tokens/exchange` | Exchange owner credentials for AgentIDP token |
 
 ### 4.2 Agent Lookup Response
 
@@ -352,7 +356,7 @@ A compliant deployment MAY include the following components. They are not provid
 | Component | Description |
 |-----------|-------------|
 | **Registry Service** | Source of truth for agent identities, public keys, and owner verification status. Globally distributed with regional read replicas. |
-| **Auth Service** | Handles owner authentication, agent token exchange, and SDK endpoints for obtaining fresh AITs. |
+| **Auth Service** | Handles owner authentication, agent token exchange, and SDK endpoints for obtaining fresh AgentIDP tokens. |
 | **Verification Service** | Asynchronous pipeline for processing owner verification requests (email, DNS, KYB). |
 | **Dashboard & Admin Console** | Web application for owners to manage agents, view analytics, and configure policies. |
 
@@ -397,15 +401,15 @@ The following sequence describes the end-to-end flow from agent registration to 
 1. Owner registers at a compliant registry, provides email, verifies to Level 2 (domain DNS TXT record).
 2. Owner creates agent: `POST /v1/agents` with name, capabilities. Registry generates ES256 key pair, returns `agent_id` + private key JWK.
 3. Owner deploys agent with private key stored in secrets manager (e.g., AWS Secrets Manager, HashiCorp Vault).
-4. Agent needs to submit a form: Agent constructs an AIT JWT, self-signs with its private key, includes target audience claim.
-5. Agent calls `POST /forms/{form_id}/submit` with `Authorization: Bearer <AIT>`.
+4. Agent needs to submit a form: Agent constructs an AgentIDP token, self-signs with its private key, includes target audience claim.
+5. Agent calls `POST /forms/{form_id}/submit` with `Authorization: Bearer <token>`.
 6. The service verifies:
    - (a) JWT signature against cached public key from registry JWKS
    - (b) Token expiry
    - (c) Agent status via registry
    - (d) Access tier policy
    - (e) Rate limit check by `agent_id`
-7. Submission accepted or rejected with appropriate HTTP status and AgentID-specific error codes.
+7. Submission accepted or rejected with appropriate HTTP status and AgentIDP-specific error codes.
 
 ### 5.4 SDK Design (illustrative)
 
@@ -422,7 +426,7 @@ const auth = new AgentAuth({
   registryUrl: "https://registry.agentidp.dev",
 });
 
-// Get a fresh AIT for a specific service
+// Get a fresh AgentIDP token for a specific service
 const token = await auth.getToken({
   audience: "https://api.example.com"
 });
@@ -466,7 +470,7 @@ app.post('/forms/:id/submit',
 
 ### 6.2 Replay Prevention
 
-Every AIT includes a unique `jti` (JWT ID) claim. Services SHOULD maintain a `jti` cache (e.g., Redis with TTL matching token expiry) and reject tokens with previously seen `jti` values. For stateless verification, the short token lifetime (1 hour RECOMMENDED) provides an acceptable trade-off.
+Every AgentIDP token includes a unique `jti` (JWT ID) claim. Services SHOULD maintain a `jti` cache (e.g., Redis with TTL matching token expiry) and reject tokens with previously seen `jti` values. For stateless verification, the short token lifetime (1 hour RECOMMENDED) provides an acceptable trade-off.
 
 ### 6.3 Abuse Mitigation
 
@@ -486,11 +490,11 @@ The minimum public disclosure is: `owner_type`, `verification_level`, and (for L
 
 ### 7.1 Example service (hypothetical)
 
-The following is a **pattern**, not a shipped product. A form service could implement AgentID by letting form creators set an access tier per form. When an agent submits, the service verifies the AIT, applies rate limits, logs provenance, and shows the form owner which agents submitted data and on whose behalf.
+The following is a **pattern**, not a shipped product. A form service could implement AgentIDP by letting form creators set an access tier per form. When an agent submits, the service verifies the AgentIDP token, applies rate limits, logs provenance, and shows the form owner which agents submitted data and on whose behalf.
 
 ### 7.2 MCP Servers
 
-Model Context Protocol (MCP) servers can adopt AgentID to authenticate the AI models connecting to them. When an MCP client presents an AIT, the server can verify the agent's identity and apply tool-level access policies. This is a natural fit since MCP already defines a tool interface but lacks a standardised identity layer.
+Model Context Protocol (MCP) servers can adopt AgentIDP to authenticate the AI models connecting to them. When an MCP client presents an AgentIDP token, the server can verify the agent's identity and apply tool-level access policies. This is a natural fit since MCP already defines a tool interface but lacks a standardised identity layer.
 
 ### 7.3 Multi-Agent Orchestration
 
@@ -498,11 +502,11 @@ Orchestration frameworks like CrewAI and AutoGen can use the delegation chain fe
 
 ### 7.4 Existing OAuth Services
 
-AgentID is designed to complement, not replace, OAuth. For services that already use OAuth for user authentication, AgentID adds the agent identity layer. A typical pattern is:
+AgentIDP is designed to complement, not replace, OAuth. For services that already use OAuth for user authentication, AgentIDP adds the agent identity layer. A typical pattern is:
 
 1. The user grants an OAuth token to the agent (user delegation).
-2. The agent includes the OAuth grant reference in the AIT delegation chain.
-3. The service verifies both the agent's identity (AgentID) and the user's authorisation (OAuth).
+2. The agent includes the OAuth grant reference in the AgentIDP token delegation chain.
+3. The service verifies both the agent's identity (AgentIDP) and the user's authorisation (OAuth).
 
 ---
 
@@ -510,7 +514,7 @@ AgentID is designed to complement, not replace, OAuth. For services that already
 
 ### 8.1 Open Specification
 
-The AgentID Protocol Specification is released under the **Apache 2.0** licence. Anyone may implement a compliant registry, SDK, or verification service.
+The AgentIDP Protocol Specification is released under the **Apache 2.0** licence. Anyone may implement a compliant registry, SDK, or verification service.
 
 The specification is maintained in a public GitHub repository with an RFC-style change process. Major version changes require community review and a minimum 90-day comment period.
 
@@ -528,7 +532,7 @@ If a hosted registry is operated later, it MAY be commercial. This specification
 
 | Version | Status | Focus |
 |---------|--------|-------|
-| **v0.1.0** | Draft (this document) | AIT format, verification levels, access tiers, delegation, registry shape |
+| **v0.1.0** | Draft (this document) | AgentIDP token format, verification levels, access tiers, delegation, registry shape |
 | Later | Not started | SDKs, a hosted registry, federation, and framework adapters stay out of this repository until the draft is reviewed |
 
 ---
@@ -564,8 +568,8 @@ com.acme.memory:export
 
 | Code | Name | Description |
 |------|------|-------------|
-| `AID-001` | `INVALID_TOKEN` | AIT signature verification failed |
-| `AID-002` | `TOKEN_EXPIRED` | AIT has exceeded its `exp` claim |
+| `AID-001` | `INVALID_TOKEN` | AgentIDP token signature verification failed |
+| `AID-002` | `TOKEN_EXPIRED` | AgentIDP token has exceeded its `exp` claim |
 | `AID-003` | `AGENT_REVOKED` | Agent has been revoked in the registry |
 | `AID-004` | `AGENT_SUSPENDED` | Agent is temporarily suspended |
 | `AID-005` | `INSUFFICIENT_VERIFICATION` | Owner verification level below minimum required |
@@ -579,7 +583,7 @@ com.acme.memory:export
 
 | Term | Definition |
 |------|------------|
-| **AIT** | Agent Identity Token. The signed JWT that an agent presents to authenticate itself. |
+| **AgentIDP token** | The signed JWT that an agent presents to authenticate itself. Earlier drafts called this an Agent Identity Token (AIT). That name was retired because the OAuth WG uses AIT for Agent Intent Token. JWT `typ` remains `AIT+jwt`. |
 | **Agent** | An autonomous software system that interacts with services on behalf of a principal (human user or another agent). |
 | **Owner** | The human or organisation legally accountable for an agent's actions. |
 | **Principal** | The entity on whose behalf an agent acts. May be a user, an organisation, or another agent. |
@@ -590,4 +594,4 @@ com.acme.memory:export
 
 ---
 
-*End of Specification — AgentID Protocol v0.1.0 Draft*
+*End of Specification — AgentIDP Protocol v0.1.0 Draft*

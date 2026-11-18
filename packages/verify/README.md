@@ -1,6 +1,6 @@
 # @agentidp/verify
 
-Service-side verifier for AgentIDP. Check an AIT and protect Connect/Express endpoints.
+Service-side verifier for AgentIDP. Check an AgentIDP token and protect Connect/Express endpoints.
 
 Prepared for a public npm publish as `@agentidp/verify` `0.1.0`. The package is not on the registry until a maintainer runs the [publish checklist](../../docs/npm-publish.md). Until then, install from this workspace.
 

@@ -1,7 +1,7 @@
 {
   "name": "@agentidp/verify",
   "version": "0.1.0",
-  "description": "Service-side AgentIDP verifier. Verify AITs and protect HTTP endpoints.",
+  "description": "Service-side AgentIDP verifier. Verify AgentIDP tokens and protect HTTP endpoints.",
   "license": "Apache-2.0",
   "type": "module",
   "engines": {
@@ -37,7 +37,6 @@
   },
   "keywords": [
     "agentidp",
-    "ait",
     "jwt",
     "agent-identity",
     "middleware"

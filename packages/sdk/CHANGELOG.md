@@ -11,7 +11,7 @@ First workspace release, prepared for a future public npm publish. Version match
 
 ### Added
 
-- `AgentAuth` to mint ES256 Agent Identity Tokens (AIT) with a caller-held private key
+- `AgentAuth` to mint ES256 AgentIDP tokens with a caller-held private key
 - `getToken({ audience, capabilities?, expiresInSeconds? })` with a 24-hour maximum lifetime (default 1 hour)
 - Optional agent and owner claims (`agent_name`, `owner_id`, `owner_name`, `owner_type`, `verification_level`)
 - `decodeAitClaims` and `importPrivateKey` helpers

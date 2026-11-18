@@ -11,7 +11,8 @@ First workspace release, prepared for a future public npm publish. Version match
 
 ### Added
 
-- `verifyAgentToken` to check an AIT (signature, `typ`, lifetime, audience, access tier)
+- `verifyAgentToken` to check an AgentIDP token (signature, `typ`, lifetime, audience, access tier)
+- `AID-001` / `AID-002` messages say AgentIDP token (error codes and JWT `typ` unchanged)
 - `agentIdMiddleware` for Connect/Express-style HTTP protection
 - Optional registry JWKS, public-key, status, and owner lookup
 - In-memory key/status cache and optional process-local rate limit
