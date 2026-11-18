@@ -1,6 +1,6 @@
 # @agentidp/sdk
 
-Agent-side SDK for AgentIDP. Mint ES256 Agent Identity Tokens (AIT) with a caller-held private key.
+Agent-side SDK for AgentIDP. Generate an agent key pair, build a proof JWT, and call `POST /api/v1/tokens/exchange`.
 
 Prepared for a public npm publish as `@agentidp/sdk` `0.1.0`. The package is not on the registry until a maintainer runs the [publish checklist](../../docs/npm-publish.md). Until then, install from this workspace.
 
@@ -9,11 +9,15 @@ npm i @agentidp/sdk
 ```
 
 ```ts
-import { AgentAuth } from "@agentidp/sdk";
+import { AgentAuth, generateAgentKeyPair } from "@agentidp/sdk";
+
+const keys = await generateAgentKeyPair(); // ES256 by default; `{ alg: "EdDSA" }` is allowed
+// PUT keys.publicJwk to /api/v1/agents/{id}/public-key. Keep keys.privateJwk.
 
 const auth = new AgentAuth({
   agentId: "ag_7xK9m2nP4qRtL8",
-  privateKey: process.env.AGENT_PRIVATE_KEY,
+  privateKey: keys.privateJwk,
+  apiKey: process.env.AGENTIDP_API_KEY,
 });
 
 const token = await auth.getToken({
@@ -21,15 +25,19 @@ const token = await auth.getToken({
 });
 ```
 
+When `apiKey` or `AGENTIDP_API_KEY` is set, `getToken` signs a proof JWT (`iss`/`sub` = agent id, `aud` = the token endpoint, max 5 minutes) and POSTs it to `/api/v1/tokens/exchange`. Without an API key, `getToken` still signs locally. Local mint is not the registry path.
+
 ## Constructor
 
 | Field | Required | Notes |
 | --- | --- | --- |
 | `agentId` | yes | Globally unique agent id (`ag_…`) |
-| `privateKey` | yes | PKCS#8 PEM, SEC1 PEM, JWK JSON string, or JWK object. Matches the `agent_secret` the registry returns once at registration. |
-| `registryUrl` | no | Issuer (`iss`). Default: `AGENTIDP_REGISTRY_URL` or `https://registry.agentidp.dev` |
+| `privateKey` | yes | PKCS#8 PEM, SEC1 PEM, JWK JSON string, or JWK object. Generated locally; the registry stores only the public JWK. |
+| `apiKey` | for exchange | Owner API key (`aidp_…`). Also read from `AGENTIDP_API_KEY`. |
+| `registryUrl` | no | Registry origin. Default: `AGENTIDP_REGISTRY_URL` or `https://registry.agentidp.dev` |
+| `fetch` | no | Injected fetch for tests |
 | `keyId` | no | JWT `kid`. Falls back to the JWK `kid`, then `agentId` |
-| `agentName`, `agentVersion`, `agentDescription` | no | Copied onto the token when set |
-| `ownerId`, `ownerName`, `ownerType`, `verificationLevel` | no | Copied onto the token when set. `owner_name` is omitted when `ownerName` is not supplied |
+| `agentName`, `agentVersion`, `agentDescription` | no | Copied onto a locally minted token when set |
+| `ownerId`, `ownerName`, `ownerType`, `verificationLevel` | no | Copied onto a locally minted token when set. `owner_name` is omitted when `ownerName` is not supplied |
 
-`getToken({ audience, capabilities?, expiresInSeconds? })` signs locally. No network call is made. Maximum lifetime is 24 hours (default 1 hour).
+`getToken({ audience, capabilities?, expiresInSeconds?, delegationChain? })` requires a non-empty `audience`. Maximum minted lifetime is 24 hours (default 1 hour). `capabilities` maps to exchange `scopes`.

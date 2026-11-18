@@ -4,6 +4,7 @@ export { AgentIdError, ERRORS, isAgentIdError } from "./errors.js";
 export { parseVerificationLevel } from "./levels.js";
 export { MemoryRateLimitStore, defaultRateLimitStore } from "./rate-limit.js";
 export {
+  AGENTIDP_TOKEN_TYP,
   AIT_TYP,
   DEFAULT_JWKS_PATH,
   DEFAULT_KEY_CACHE_TTL_SECONDS,

@@ -1,6 +1,6 @@
 # AgentIDP
 
-Open protocol for agent identity, authentication and access control. A service that verifies an Agent Identity Token (AIT) can answer:
+Open protocol for agent identity, authentication and access control. A service that verifies an AgentIDP token can answer:
 
 1. Which agent is this?
 2. Who is accountable for it?
@@ -14,8 +14,8 @@ This repository holds the protocol text and the TypeScript packages the site doc
 
 | Package | Path | Version | Role |
 | --- | --- | --- | --- |
-| [`@agentidp/sdk`](packages/sdk) | `packages/sdk` | `0.1.0` | Agent-side: mint an AIT with a caller-held private key |
-| [`@agentidp/verify`](packages/verify) | `packages/verify` | `0.1.0` | Service-side: verify an AIT and protect an HTTP route |
+| [`@agentidp/sdk`](packages/sdk) | `packages/sdk` | `0.1.0` | Agent-side: generate a key, build a proof JWT, call token exchange |
+| [`@agentidp/verify`](packages/verify) | `packages/verify` | `0.1.0` | Service-side: verify an AgentIDP token and protect an HTTP route |
 
 Both packages are prepared for a public npm publish as `0.1.0` (same version as the protocol draft). They are not on the registry until a maintainer runs [docs/npm-publish.md](docs/npm-publish.md).
 
@@ -46,11 +46,13 @@ pnpm add @agentidp/verify@file:../agentidp/packages/verify
 ### Agent SDK
 
 ```ts
-import { AgentAuth } from "@agentidp/sdk";
+import { AgentAuth, generateAgentKeyPair } from "@agentidp/sdk";
 
+const keys = await generateAgentKeyPair();
 const auth = new AgentAuth({
   agentId: "ag_7xK9m2nP4qRtL8",
-  privateKey: process.env.AGENT_PRIVATE_KEY,
+  privateKey: keys.privateJwk,
+  apiKey: process.env.AGENTIDP_API_KEY,
 });
 
 const token = await auth.getToken({
@@ -62,7 +64,7 @@ await fetch("https://api.example.com/submit", {
 });
 ```
 
-`AgentAuth` signs locally with the agent private key (PEM or JWK). Pass optional owner fields at construct time when you want them on the token:
+When `apiKey` is set, `getToken` builds a proof JWT and calls `POST /api/v1/tokens/exchange`. Without it, `AgentAuth` still signs locally with the agent private key (PEM or JWK). Pass optional owner fields at construct time when you want them on a locally minted token:
 
 ```ts
 const auth = new AgentAuth({
@@ -75,7 +77,7 @@ const auth = new AgentAuth({
 });
 ```
 
-If you omit `ownerName`, the minted AIT has no `owner_name` claim. The SDK does not invent one.
+If you omit `ownerName`, a locally minted token has no `owner_name` claim. The SDK does not invent one.
 
 ### Service middleware
 
@@ -105,6 +107,7 @@ The default issuer is `https://registry.agentidp.dev`. Point the SDKs at a runni
 | --- | --- | --- |
 | `AGENTIDP_REGISTRY_URL` | both packages | `https://registry.agentidp.dev` |
 | `AGENT_PRIVATE_KEY` | `@agentidp/sdk` | none (caller supplies PEM or JWK) |
+| `AGENTIDP_API_KEY` | `@agentidp/sdk` | none (owner API key for token exchange) |
 | `AGENTIDP_JWKS_URI` | `@agentidp/verify` | `{AGENTIDP_REGISTRY_URL}/.well-known/jwks.json` |
 
 Registry contract locked to `/api/v1/` plus well-known JWKS (`agentidp/registry` main, Connor). The host is not live yet. There are no bare `/v1/...` routes.
@@ -112,7 +115,9 @@ Registry contract locked to `/api/v1/` plus well-known JWKS (`agentidp/registry`
 | Method | Path | Purpose |
 | --- | --- | --- |
 | `GET` | `/.well-known/jwks.json` | Registry signing keys (registry-issued tokens from `POST /api/v1/tokens/exchange`) |
-| `GET` | `/api/v1/agents/{agent_id}/public-key` | Agent public JWK for agent-signed AITs |
+| `GET` | `/api/v1/agents/{agent_id}/public-key` | Agent public JWK for proof verification and `cnf.jkt` |
+| `PUT` | `/api/v1/agents/{agent_id}/public-key` | Register or rotate the public JWK (owner auth) |
+| `POST` | `/api/v1/tokens/exchange` | Mint a registry-signed AgentIDP token (owner API key and proof JWT) |
 | `GET` | `/api/v1/agents/{agent_id}/status` | `{ agent_id, status, checked_at }` (`active` / `revoked` / `suspended`) |
 | `GET` | `/api/v1/agents/{agent_id}` | Public lookup, including owner fields and `status` when the registry returns them |
 
@@ -124,9 +129,9 @@ Set `checkRevocation: true` when a registry is reachable. Set `lookupOwner: true
 
 ## Specification
 
-Full text: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md).
+Full text: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md). Test vectors: [`spec/vectors/token-exchange-v0.1.json`](spec/vectors/token-exchange-v0.1.json).
 
-An AIT is an ES256 JWT (`typ: AIT+jwt`) with agent identity, owner verification, capabilities, and an optional delegation chain. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the token without a round-trip.
+An AgentIDP token is an ES256 JWT (`typ: agentidp+jwt`) with agent identity, owner verification, capabilities, required `aud`, and `cnf.jkt` on tokens minted by exchange. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the token without a round-trip. Resource-server DPoP is not implemented.
 
 ## Contributing
 

@@ -11,8 +11,20 @@ First workspace release, prepared for a future public npm publish. Version match
 
 ### Added
 
-- `verifyAgentToken` to check an AIT (signature, `typ`, lifetime, audience, access tier)
+- `verifyAgentToken` to check an AgentIDP token (signature, `typ`, lifetime, audience, access tier)
 - `agentIdMiddleware` for Connect/Express-style HTTP protection
 - Optional registry JWKS, public-key, status, and owner lookup
 - In-memory key/status cache and optional process-local rate limit
-- `AgentIdError` codes (`AID-001` through `AID-010`)
+- `AgentIdError` codes (`AID-001` through `AID-011`, plus `AID-013`, `AID-014`, `AID-016`, `AID-017`)
+- Acceptance of `typ: agentidp+jwt` in addition to the historical `AIT+jwt`
+- When `cnf.jkt` is present, format checks and optional consistency with `confirmationJwk` / `expectedJkt`
+
+### Changed
+
+- `aud` is required by default (`requireAudience` defaults to `true`). Missing `aud` is `AID-011`. Set `requireAudience: false` for tokens minted before this rule.
+- Error messages name the credential an AgentIDP token.
+
+### Breaking
+
+- Tokens without `aud` fail unless `requireAudience: false`.
+- `AgentIdError` message strings no longer use the old three-letter token acronym.
