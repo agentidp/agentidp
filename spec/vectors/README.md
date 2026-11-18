@@ -15,4 +15,4 @@ Cases:
 | `scope_outside_capabilities` | `AID-014` |
 | `widening_delegation_hop` | `AID-009` |
 
-`minted_token_example` is a registry-signed AgentIDP token with `cnf.jkt`, integer `verification_level` 2, and no `owner_name`. It does not implement resource-server DPoP.
+`minted_token_example` is a registry-signed AgentIDP token with `cnf.jkt` and integer `verification_level` 2. It omits an owner display name. Resource-server DPoP is not implemented. Designed alongside RFC 8693 token exchange and RFC 9449 DPoP. Resource-server DPoP and formal profiles of these specs are on the roadmap.

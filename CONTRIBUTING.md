@@ -1,6 +1,10 @@
 # Contributing to AgentIDP
 
-This repository holds the protocol draft in `spec/` and the TypeScript packages in `packages/`.
+This repository holds the protocol text in `spec/` and the TypeScript packages in `packages/`.
+
+## Claims sync
+
+If you change behaviour in `packages/`, `spec/`, or the matching registry contract, update the claims in README, the spec, COMPETITIVE-LANDSCAPE, and site copy in the same change (or the same PR set). Say so in the PR description. The mapping, path list, and house rules are in [AGENTS.md](AGENTS.md). Never commit secrets. Open a pull request; do not push to `main`. Do not publish to npm or deploy without approval.
 
 ## How to contribute
 
@@ -23,7 +27,7 @@ This repository holds the protocol draft in `spec/` and the TypeScript packages 
 ### SDK edits
 
 1. Branch from `main`.
-2. Change `packages/sdk` and/or `packages/verify`.
+2. Change `packages/sdk`, `packages/verify`, and/or `packages/mcp`.
 3. Keep Apache-2.0. Do not publish to npm from a contributor machine. See [docs/npm-publish.md](docs/npm-publish.md).
 4. Run `pnpm test`, `pnpm typecheck`, `pnpm build`, and `pnpm test:pack`.
 5. Update the package `CHANGELOG.md` when the public API or version changes.

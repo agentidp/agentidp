@@ -1,8 +1,8 @@
 /**
  * Offline fixtures matching agentidp/registry (Next.js) as of 2026-10-26.
  *
- * Live host `https://registry.agentidp.dev` returned HTTP 500 while this
- * package was wired. Tests use these shapes instead of the network.
+ * Offline fixtures matching the live registry contract at
+ * `https://registry.agentidp.dev`. Tests use these shapes instead of the network.
  *
  * Canonical paths (Connor / agentidp/registry main). No bare `/v1/...`:
  *   GET {registry}/.well-known/jwks.json
