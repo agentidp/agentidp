@@ -32,7 +32,10 @@ app.post(
 | --- | --- | --- |
 | `accessTier` | `authenticated` | `open` (token optional), `authenticated`, `permissioned` (allowlist of `agent_id` or `owner_id`) |
 | `minVerificationLevel` | `0` | Integer 0–3. Token claim `"domain"` maps to `2` |
-| `audience` | unset | When set, `aud` must match |
+| `audience` | unset | When set, `aud` must match this value |
+| `requireAudience` | `true` | Token MUST include `aud`. Missing `aud` is `AID-011`. Set `false` only for tokens minted before this rule |
+| `confirmationJwk` | unset | When the token has `cnf.jkt`, it MUST match this JWK's SHA-256 thumbprint |
+| `expectedJkt` | unset | When the token has `cnf.jkt`, it MUST equal this string |
 | `allowlist` | `[]` | Used by `permissioned` |
 | `registryUrl` | `AGENTIDP_REGISTRY_URL` or `https://registry.agentidp.dev` | Base URL for JWKS, public-key, status, lookup |
 | `jwksUri` | `{registryUrl}/.well-known/jwks.json` | Override with `AGENTIDP_JWKS_URI` |

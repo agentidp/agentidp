@@ -26,6 +26,17 @@ export const ERRORS: Record<
     message: "Delegation chain scope attenuation violated",
   },
   "AID-010": { status: 400, message: "Token jti has been previously used" },
+  "AID-011": { status: 400, message: "AgentIDP token aud claim is required" },
+  "AID-013": { status: 401, message: "Agent proof JWT failed verification" },
+  "AID-014": {
+    status: 403,
+    message: "Requested scope is not a subset of registered capabilities",
+  },
+  "AID-016": { status: 400, message: "Agent has no registered public key" },
+  "AID-017": {
+    status: 400,
+    message: "public_key is not a supported ES256 or EdDSA public JWK",
+  },
 };
 
 export class AgentIdError extends Error {

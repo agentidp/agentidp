@@ -16,4 +16,16 @@ First workspace release, prepared for a future public npm publish. Version match
 - `agentIdMiddleware` for Connect/Express-style HTTP protection
 - Optional registry JWKS, public-key, status, and owner lookup
 - In-memory key/status cache and optional process-local rate limit
-- `AgentIdError` codes (`AID-001` through `AID-010`)
+- `AgentIdError` codes (`AID-001` through `AID-011`, plus `AID-013`, `AID-014`, `AID-016`, `AID-017`)
+- Registry wire `typ` is `AIT+jwt`. Verifiers also accept `agentidp+jwt` as an alias.
+- When `cnf.jkt` is present, format checks and optional consistency with `confirmationJwk` / `expectedJkt`
+
+### Changed
+
+- `aud` is required by default (`requireAudience` defaults to `true`). Missing `aud` is `AID-011`. Set `requireAudience: false` for tokens minted before this rule.
+- Error messages name the credential an AgentIDP token.
+
+### Breaking
+
+- Tokens without `aud` fail unless `requireAudience: false`.
+- `AgentIdError` message strings no longer use the old three-letter token acronym.

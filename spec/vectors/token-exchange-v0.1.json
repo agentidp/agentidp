@@ -1,0 +1,193 @@
+{
+  "$comment": "TEST-ONLY cryptographic material for AgentIDP token-exchange vectors. These keys MUST NOT be used outside tests. They are not production, staging, or registry keys.",
+  "spec_version": "0.1.0",
+  "generated_at": "2026-11-18T16:00:00Z",
+  "clock": {
+    "iat": 1763481600,
+    "note": "Unix seconds. Valid proofs use this iat unless a case overrides."
+  },
+  "registry_url": "https://registry.example.test",
+  "token_exchange_path": "/api/v1/tokens/exchange",
+  "proof_audience": "https://registry.example.test/api/v1/tokens/exchange",
+  "proof_audience_alias": "https://registry.example.test/v1/tokens/exchange",
+  "resource_audience": "https://api.example.com",
+  "acting_agent_id": "ag_testvector01",
+  "delegator_agent_id": "ag_testvector00",
+  "registered_capabilities": [
+    "calendar:read",
+    "calendar:list"
+  ],
+  "jwt_typ": {
+    "minted_token": "AIT+jwt",
+    "proof": "AIT-POP+jwt",
+    "delegation_hop": "AIT-DLG+jwt"
+  },
+  "keys": {
+    "warning": "TEST ONLY. Never use these as real keys.",
+    "acting_agent": {
+      "alg": "ES256",
+      "kid": "test-agent-es256",
+      "public_jwk": {
+        "kty": "EC",
+        "x": "pm5EVE0jhIhx9X2i_iCUw5PpSx95py-p5mMulUhKWiM",
+        "y": "M9Nb2DGwiuKwbfSdc-Dzwvc5aCvd87jkb96GbkBYA8Q",
+        "crv": "P-256",
+        "kid": "test-agent-es256",
+        "alg": "ES256",
+        "use": "sig"
+      },
+      "private_jwk": {
+        "kty": "EC",
+        "x": "pm5EVE0jhIhx9X2i_iCUw5PpSx95py-p5mMulUhKWiM",
+        "y": "M9Nb2DGwiuKwbfSdc-Dzwvc5aCvd87jkb96GbkBYA8Q",
+        "crv": "P-256",
+        "d": "hXSU852oCUIxlbr6zC6xIrm5elYK08bA7LadO9vGlxI",
+        "kid": "test-agent-es256",
+        "alg": "ES256",
+        "use": "sig"
+      },
+      "jkt": "ZvM2EutclQ8FLC0Oh07tG8bYwYOwx2jLHbl5bQrRyp0"
+    },
+    "delegator_agent": {
+      "alg": "ES256",
+      "kid": "test-delegator-es256",
+      "public_jwk": {
+        "kty": "EC",
+        "x": "ZaIF4jcok1Ta5FIKHidsVoKLPUqCKk1Axm3qWo0Uy7k",
+        "y": "OsQlz3tRAQUC1rSkhEAY7Mk3hkzbYVJYwQTVsX-5LDA",
+        "crv": "P-256",
+        "kid": "test-delegator-es256",
+        "alg": "ES256",
+        "use": "sig"
+      },
+      "private_jwk": {
+        "kty": "EC",
+        "x": "ZaIF4jcok1Ta5FIKHidsVoKLPUqCKk1Axm3qWo0Uy7k",
+        "y": "OsQlz3tRAQUC1rSkhEAY7Mk3hkzbYVJYwQTVsX-5LDA",
+        "crv": "P-256",
+        "d": "DZra6Gce-7UQ9TKkCEHtKfapNXjTvM0RnU83bs7pv4w",
+        "kid": "test-delegator-es256",
+        "alg": "ES256",
+        "use": "sig"
+      }
+    },
+    "registry": {
+      "alg": "ES256",
+      "kid": "test-registry-es256",
+      "public_jwk": {
+        "kty": "EC",
+        "x": "3zkzLDE431Fa1R9Cl5nW1wNMcPffdcfKYhA9CMOJBkY",
+        "y": "Bc4vNCiOlh70c5wrZpyxj4vPeYd_d3N9vJHYOA4reDU",
+        "crv": "P-256",
+        "kid": "test-registry-es256",
+        "alg": "ES256",
+        "use": "sig"
+      },
+      "private_jwk": {
+        "kty": "EC",
+        "x": "3zkzLDE431Fa1R9Cl5nW1wNMcPffdcfKYhA9CMOJBkY",
+        "y": "Bc4vNCiOlh70c5wrZpyxj4vPeYd_d3N9vJHYOA4reDU",
+        "crv": "P-256",
+        "d": "bGUCYYK0JFU838IWxVMg3ubyRU82AUaySPikgyosWCU",
+        "kid": "test-registry-es256",
+        "alg": "ES256",
+        "use": "sig"
+      },
+      "note": "Test-only registry signing key used to illustrate a minted AgentIDP token with cnf.jkt. Not a live registry key."
+    }
+  },
+  "cases": [
+    {
+      "name": "valid_proof",
+      "description": "Proof JWT signed by the acting agent, aud bound to the token endpoint, lifetime 60s, unique jti.",
+      "expect": "pass",
+      "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdC9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODE2NjAsImp0aSI6InBvcF90ZXN0dmVjdG9yX3ZhbGlkXzAwMSJ9.zl4E1asoRqhbuM39rllWPdQRjjlgxIFuuiWX1SnwHt14oYIRyKUtm2yn3Mi6JvXGaWaNJEbm3NVtoLFNGiXkLA",
+      "exchange_request": {
+        "agent_id": "ag_testvector01",
+        "aud": "https://api.example.com",
+        "scopes": [
+          "calendar:read"
+        ],
+        "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdC9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODE2NjAsImp0aSI6InBvcF90ZXN0dmVjdG9yX3ZhbGlkXzAwMSJ9.zl4E1asoRqhbuM39rllWPdQRjjlgxIFuuiWX1SnwHt14oYIRyKUtm2yn3Mi6JvXGaWaNJEbm3NVtoLFNGiXkLA"
+      }
+    },
+    {
+      "name": "wrong_audience",
+      "description": "Proof JWT aud is not the registry token-exchange endpoint.",
+      "expect": "fail",
+      "error": "AID-013",
+      "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL2V2aWwuZXhhbXBsZS9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODE2NjAsImp0aSI6InBvcF90ZXN0dmVjdG9yX3dyb25nX2F1ZF8wMDEifQ.hRWzJhhCh6We1kreKfhfmG9PvwgbZn6DOx-UAtgPTyed1B-FKhM6A3F-txsGYOLTZJhbJGd6PH0DvgeFYc3rgA",
+      "exchange_request": {
+        "agent_id": "ag_testvector01",
+        "aud": "https://api.example.com",
+        "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL2V2aWwuZXhhbXBsZS9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODE2NjAsImp0aSI6InBvcF90ZXN0dmVjdG9yX3dyb25nX2F1ZF8wMDEifQ.hRWzJhhCh6We1kreKfhfmG9PvwgbZn6DOx-UAtgPTyed1B-FKhM6A3F-txsGYOLTZJhbJGd6PH0DvgeFYc3rgA"
+      }
+    },
+    {
+      "name": "expired_proof",
+      "description": "Proof JWT exp is in the past relative to 2026-11-18T16:00:00Z.",
+      "expect": "fail",
+      "error": "AID-013",
+      "now": 1763481600,
+      "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdC9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE3MDAwMDAxMDAsImp0aSI6InBvcF90ZXN0dmVjdG9yX2V4cGlyZWRfMDAxIn0.GIT9nv51r1DFt7z-I4MCdnIMUPOHnPnBsWqkJE0QZ73XrYYhTJSBuCuU-mfcSaSHwn8Ar7G8zqRvZiRq1ikfuw",
+      "exchange_request": {
+        "agent_id": "ag_testvector01",
+        "aud": "https://api.example.com",
+        "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdC9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjE3MDAwMDAxMDAsImp0aSI6InBvcF90ZXN0dmVjdG9yX2V4cGlyZWRfMDAxIn0.GIT9nv51r1DFt7z-I4MCdnIMUPOHnPnBsWqkJE0QZ73XrYYhTJSBuCuU-mfcSaSHwn8Ar7G8zqRvZiRq1ikfuw"
+      }
+    },
+    {
+      "name": "replayed_jti",
+      "description": "The same proof jti presented a second time MUST be rejected (AID-010).",
+      "expect": "fail_on_replay",
+      "error": "AID-010",
+      "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdC9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODE2NjAsImp0aSI6InBvcF90ZXN0dmVjdG9yX3JlcGxheV8wMDEifQ.Oj3tkS84bXyeD0rSdLHHXKyJmt4cdp0pMZBsKQF-pc7X7ksARrTk16UL3g6Gcj5pvheFHEyf8li3f70JOmGP_A",
+      "exchange_request": {
+        "agent_id": "ag_testvector01",
+        "aud": "https://api.example.com",
+        "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdC9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODE2NjAsImp0aSI6InBvcF90ZXN0dmVjdG9yX3JlcGxheV8wMDEifQ.Oj3tkS84bXyeD0rSdLHHXKyJmt4cdp0pMZBsKQF-pc7X7ksARrTk16UL3g6Gcj5pvheFHEyf8li3f70JOmGP_A"
+      }
+    },
+    {
+      "name": "scope_outside_capabilities",
+      "description": "Requested scope is not an exact subset of registered capabilities.",
+      "expect": "fail",
+      "error": "AID-014",
+      "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdC9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODE2NjAsImp0aSI6InBvcF90ZXN0dmVjdG9yX3ZhbGlkXzAwMSJ9.zl4E1asoRqhbuM39rllWPdQRjjlgxIFuuiWX1SnwHt14oYIRyKUtm2yn3Mi6JvXGaWaNJEbm3NVtoLFNGiXkLA",
+      "exchange_request": {
+        "agent_id": "ag_testvector01",
+        "aud": "https://api.example.com",
+        "scopes": [
+          "payment:initiate"
+        ],
+        "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdC9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODE2NjAsImp0aSI6InBvcF90ZXN0dmVjdG9yX3ZhbGlkXzAwMSJ9.zl4E1asoRqhbuM39rllWPdQRjjlgxIFuuiWX1SnwHt14oYIRyKUtm2yn3Mi6JvXGaWaNJEbm3NVtoLFNGiXkLA"
+      }
+    },
+    {
+      "name": "widening_delegation_hop",
+      "description": "Hop 1 scopes are a superset of hop 0. Delegation MUST NOT widen.",
+      "expect": "fail",
+      "error": "AID-009",
+      "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdC9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODE2NjAsImp0aSI6InBvcF90ZXN0dmVjdG9yX3ZhbGlkXzAwMSJ9.zl4E1asoRqhbuM39rllWPdQRjjlgxIFuuiWX1SnwHt14oYIRyKUtm2yn3Mi6JvXGaWaNJEbm3NVtoLFNGiXkLA",
+      "exchange_request": {
+        "agent_id": "ag_testvector01",
+        "aud": "https://api.example.com",
+        "scopes": [
+          "calendar:read"
+        ],
+        "proof": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1QT1Arand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJpc3MiOiJhZ190ZXN0dmVjdG9yMDEiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdC9hcGkvdjEvdG9rZW5zL2V4Y2hhbmdlIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODE2NjAsImp0aSI6InBvcF90ZXN0dmVjdG9yX3ZhbGlkXzAwMSJ9.zl4E1asoRqhbuM39rllWPdQRjjlgxIFuuiWX1SnwHt14oYIRyKUtm2yn3Mi6JvXGaWaNJEbm3NVtoLFNGiXkLA",
+        "delegation_chain": [
+          "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1ETEcrand0Iiwia2lkIjoidGVzdC1kZWxlZ2F0b3ItZXMyNTYifQ.eyJzY29wZXMiOlsiY2FsZW5kYXI6cmVhZCJdLCJpc3MiOiJhZ190ZXN0dmVjdG9yMDAiLCJzdWIiOiJhZ190ZXN0dmVjdG9yMDEiLCJhdWQiOiJodHRwczovL2FwaS5leGFtcGxlLmNvbSIsImlhdCI6MTc2MzQ4MTYwMCwiZXhwIjoxNzYzNDg1MjAwLCJqdGkiOiJkbGdfdGVzdHZlY3Rvcl9ob3AwXzAwMSJ9.zy3LNdlC0b9AGliOTVW0aJu_gWVIDgDzfnefG4qOQutg0FvYaXS8fluhPa-WV07T0sF5lATbC7ewrQgIXtV_jg",
+          "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVC1ETEcrand0Iiwia2lkIjoidGVzdC1hZ2VudC1lczI1NiJ9.eyJzY29wZXMiOlsiY2FsZW5kYXI6cmVhZCIsImNhbGVuZGFyOmxpc3QiXSwiaXNzIjoiYWdfdGVzdHZlY3RvcjAxIiwic3ViIjoiYWdfdGVzdHZlY3RvcjAxIiwiYXVkIjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20iLCJpYXQiOjE3NjM0ODE2MDAsImV4cCI6MTc2MzQ4NTIwMCwianRpIjoiZGxnX3Rlc3R2ZWN0b3JfaG9wMV93aWRlbl8wMDEifQ.CRhYd-AVPskTFaqME6PsPs2dmyaR9qiu-VUoXH9rsChu49uln_tVN6dN5Zk_Cvggy032623FLIyL90sDiUXXOg"
+        ]
+      }
+    }
+  ],
+  "minted_token_example": {
+    "description": "Registry-signed AgentIDP token illustrating cnf.jkt. Resource-server DPoP (DPoP header, htm/htu/ath) is not implemented.",
+    "token": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVCtqd3QiLCJraWQiOiJ0ZXN0LXJlZ2lzdHJ5LWVzMjU2In0.eyJhZ2VudF9pZCI6ImFnX3Rlc3R2ZWN0b3IwMSIsImFnZW50X25hbWUiOiJUZXN0IFZlY3RvciBBZ2VudCIsIm93bmVyX2lkIjoib3duX3Rlc3R2ZWN0b3IiLCJvd25lcl90eXBlIjoib3JnIiwib3duZXJfbmFtZSI6IlRlc3QgVmVjdG9yIE9yZyIsInZlcmlmaWNhdGlvbl9sZXZlbCI6ImRvbWFpbiIsImNhcGFiaWxpdGllcyI6WyJjYWxlbmRhcjpyZWFkIl0sImNuZiI6eyJqa3QiOiJadk0yRXV0Y2xROEZMQzBPaDA3dEc4Yll3WU93eDJqTEhibDViUXJSeXAwIn0sImlzcyI6Imh0dHBzOi8vcmVnaXN0cnkuZXhhbXBsZS50ZXN0Iiwic3ViIjoiYWdfdGVzdHZlY3RvcjAxIiwiYXVkIjoiaHR0cHM6Ly9hcGkuZXhhbXBsZS5jb20iLCJpYXQiOjE3NjM0ODE2MDAsImV4cCI6MTc2MzQ4NTIwMCwianRpIjoidG9rX3Rlc3R2ZWN0b3JfbWludGVkXzAwMSJ9.7FvrFZy42m0R1lt3rQROmWWkQ3wIe03ztLLJCGi_8CRrJJxg_ugvcoQBqDJX0tLf9763vY5OYtSFd98eQId5Kg",
+    "cnf": {
+      "jkt": "ZvM2EutclQ8FLC0Oh07tG8bYwYOwx2jLHbl5bQrRyp0"
+    }
+  }
+}

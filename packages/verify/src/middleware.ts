@@ -61,7 +61,6 @@ export function agentIdMiddleware(options: AgentIdMiddlewareOptions = {}) {
       const agent = await verifyAgentToken(token, {
         ...options,
         accessTier,
-        requireAudience: options.requireAudience ?? options.audience != null,
       });
 
       if (options.rateLimit && store) {

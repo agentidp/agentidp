@@ -1,4 +1,10 @@
-import { decodeJwt, decodeProtectedHeader, jwtVerify } from "jose";
+import {
+  calculateJwkThumbprint,
+  decodeJwt,
+  decodeProtectedHeader,
+  jwtVerify,
+  type JWK,
+} from "jose";
 
 import { AgentIdError } from "./errors.js";
 import {
@@ -15,10 +21,35 @@ import type {
   VerifyAgentTokenOptions,
 } from "./types.js";
 import {
+  AGENTIDP_TOKEN_TYP,
+  AGENTIDP_TOKEN_TYP_ALIAS,
   AIT_TYP,
   DEFAULT_KEY_CACHE_TTL_SECONDS,
   DEFAULT_REVOCATION_CACHE_TTL_SECONDS,
 } from "./types.js";
+
+const ACCEPTED_TYPS = new Set([
+  AGENTIDP_TOKEN_TYP,
+  AGENTIDP_TOKEN_TYP_ALIAS,
+  AIT_TYP,
+  "JWT",
+]);
+const JKT_PATTERN = /^[A-Za-z0-9_-]{43}$/;
+
+function asCnfJkt(value: unknown): string | undefined {
+  if (value == null) return undefined;
+  if (typeof value !== "object" || Array.isArray(value)) {
+    throw new AgentIdError("AID-001", "cnf must be an object");
+  }
+  const jkt = (value as { jkt?: unknown }).jkt;
+  if (typeof jkt !== "string" || !JKT_PATTERN.test(jkt)) {
+    throw new AgentIdError(
+      "AID-001",
+      "cnf.jkt must be a SHA-256 JWK thumbprint (RFC 7638 base64url)",
+    );
+  }
+  return jkt;
+}
 
 const keySources = new WeakMap<
   NonNullable<VerifyAgentTokenOptions["fetch"]> | typeof globalThis,
@@ -113,7 +144,7 @@ export async function verifyAgentToken(
   if (header.alg && header.alg !== "ES256") {
     throw new AgentIdError("AID-001", `unsupported alg ${header.alg}`);
   }
-  if (header.typ && header.typ !== AIT_TYP && header.typ !== "JWT") {
+  if (header.typ && !ACCEPTED_TYPS.has(header.typ)) {
     throw new AgentIdError("AID-001", `unsupported typ ${header.typ}`);
   }
 
@@ -126,12 +157,15 @@ export async function verifyAgentToken(
     throw new AgentIdError("AID-002");
   }
 
-  const requireAudience =
-    options.requireAudience ?? options.audience != null;
+  const requireAudience = options.requireAudience ?? true;
   if (requireAudience && unverified.aud == null) {
-    throw new AgentIdError("AID-001", "aud claim is required");
+    throw new AgentIdError("AID-011", "aud claim is required");
   }
-  if (requireAudience && !audienceAllowed(unverified.aud, options.audience)) {
+  if (
+    requireAudience &&
+    options.audience != null &&
+    !audienceAllowed(unverified.aud, options.audience)
+  ) {
     throw new AgentIdError("AID-001", "audience mismatch");
   }
 
@@ -157,7 +191,12 @@ export async function verifyAgentToken(
       algorithms: ["ES256"],
       currentDate: now,
       clockTolerance: tolerance,
-      typ: header.typ === AIT_TYP ? AIT_TYP : undefined,
+      typ:
+        header.typ === AIT_TYP ||
+        header.typ === AGENTIDP_TOKEN_TYP ||
+        header.typ === AGENTIDP_TOKEN_TYP_ALIAS
+          ? header.typ
+          : undefined,
     });
     payload = asPayload(verified.payload);
   } catch (error) {
@@ -256,6 +295,26 @@ export async function verifyAgentToken(
   if (typeof payload.exp === "number") agent.exp = payload.exp;
   const jti = optionalString(payload.jti);
   if (jti !== undefined) agent.jti = jti;
+
+  const jkt = asCnfJkt(payload.cnf);
+  if (jkt !== undefined) {
+    if (options.expectedJkt && options.expectedJkt !== jkt) {
+      throw new AgentIdError("AID-001", "cnf.jkt does not match expectedJkt");
+    }
+    if (options.confirmationJwk) {
+      const computed = await calculateJwkThumbprint(
+        options.confirmationJwk as JWK,
+        "sha256",
+      );
+      if (computed !== jkt) {
+        throw new AgentIdError(
+          "AID-001",
+          "cnf.jkt does not match confirmationJwk thumbprint",
+        );
+      }
+    }
+    agent.cnf = { jkt };
+  }
 
   return agent;
 }

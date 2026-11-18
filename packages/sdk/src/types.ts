@@ -3,20 +3,66 @@ import type { JWK } from "jose";
 export const DEFAULT_REGISTRY_URL = "https://registry.agentidp.dev";
 export const MAX_TOKEN_LIFETIME_SECONDS = 24 * 60 * 60;
 export const DEFAULT_TOKEN_LIFETIME_SECONDS = 60 * 60;
-/** JWT `typ` header. Historical wire value `AIT+jwt`; this is an AgentIDP token, not the OAuth WG Agent Intent Token. */
-export const AIT_TYP = "AIT+jwt";
+export const MIN_TOKEN_LIFETIME_SECONDS = 60;
+
+/**
+ * Wire JWT `typ` for a registry-issued AgentIDP token.
+ * Historical wire value `AIT+jwt`; this is an AgentIDP token, not the OAuth WG Agent Intent Token.
+ */
+export const AGENTIDP_TOKEN_TYP = "AIT+jwt";
+/** Wire JWT `typ` for an agent proof JWT presented at token exchange. */
+export const AGENTIDP_PROOF_TYP = "AIT-POP+jwt";
+/** Wire JWT `typ` for a signed delegation hop. */
+export const AGENTIDP_DELEGATION_TYP = "AIT-DLG+jwt";
+
+/** Same wire value as {@link AGENTIDP_TOKEN_TYP}. */
+export const AIT_TYP = AGENTIDP_TOKEN_TYP;
+
+export const PROOF_MAX_LIFETIME_SECONDS = 300;
+export const DEFAULT_PROOF_LIFETIME_SECONDS = 60;
+export const PROOF_CLOCK_SKEW_SECONDS = 60;
+export const MAX_DELEGATION_DEPTH = 8;
 
 export type OwnerType = "person" | "org";
 
 export type VerificationLevelInput = number | string;
 
+export type AgentSigningAlg = "ES256" | "EdDSA";
+
 /** PEM string, JWK JSON string, or JWK object. */
 export type PrivateKeyInput = string | JWK;
+
+export type FetchLike = (
+  input: string,
+  init?: {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+  },
+) => Promise<{
+  ok: boolean;
+  status: number;
+  json(): Promise<unknown>;
+}>;
+
+export interface AgentKeyPair {
+  alg: AgentSigningAlg;
+  kid?: string;
+  publicJwk: JWK;
+  privateJwk: JWK;
+}
 
 export interface AgentAuthOptions {
   agentId: string;
   privateKey: PrivateKeyInput;
   registryUrl?: string;
+  /**
+   * Owner API key (`aidp_…`). When set, `getToken` calls
+   * `POST /api/v1/tokens/exchange` with a proof JWT instead of minting locally.
+   * Also read from `AGENTIDP_API_KEY`.
+   */
+  apiKey?: string;
+  fetch?: FetchLike;
   /** Key id written to the JWT header. Falls back to the JWK `kid` when present. */
   keyId?: string;
   agentName?: string;
@@ -32,6 +78,43 @@ export interface GetTokenOptions {
   audience: string;
   capabilities?: string[];
   expiresInSeconds?: number;
+  /** Compact JWS hops. Each hop can only narrow scopes, audience, and expiry. */
+  delegationChain?: string[];
+}
+
+export interface CreateProofJwtOptions {
+  agentId: string;
+  privateKey: PrivateKeyInput;
+  registryUrl: string;
+  jti?: string;
+  lifetimeSeconds?: number;
+  now?: number;
+  keyId?: string;
+}
+
+export interface TokenExchangeRequest {
+  agentId: string;
+  audience: string;
+  proof: string;
+  apiKey: string;
+  registryUrl: string;
+  scopes?: string[];
+  lifetimeSeconds?: number;
+  delegationChain?: string[];
+  fetch?: FetchLike;
+}
+
+export interface TokenExchangeResponse {
+  token: string;
+  token_type: string;
+  token_id: string;
+  expires_at: string;
+  agent_id: string;
+  kid: string;
+}
+
+export interface Confirmation {
+  jkt: string;
 }
 
 export interface DelegationEntry {
@@ -53,7 +136,8 @@ export interface AitClaims {
   owner_name?: string;
   verification_level?: VerificationLevelInput;
   capabilities?: string[];
-  delegation_chain?: DelegationEntry[];
+  delegation_chain?: DelegationEntry[] | string[];
+  cnf?: Confirmation;
   iss: string;
   sub: string;
   aud: string;
@@ -61,3 +145,6 @@ export interface AitClaims {
   exp: number;
   jti: string;
 }
+
+/** Alias for {@link AitClaims}. The protocol name is AgentIDP token. */
+export type AgentIdpTokenClaims = AitClaims;

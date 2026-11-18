@@ -7,6 +7,10 @@ export const DEFAULT_KEY_CACHE_TTL_SECONDS = 60 * 60;
 export const DEFAULT_REVOCATION_CACHE_TTL_SECONDS = 60;
 /** JWT `typ` header. Historical wire value `AIT+jwt`; this is an AgentIDP token, not the OAuth WG Agent Intent Token. */
 export const AIT_TYP = "AIT+jwt";
+/** Same wire value as {@link AIT_TYP}. */
+export const AGENTIDP_TOKEN_TYP = AIT_TYP;
+/** Alias accepted by verifiers; not emitted on the wire. */
+export const AGENTIDP_TOKEN_TYP_ALIAS = "agentidp+jwt";
 
 export type AccessTier = "open" | "authenticated" | "permissioned";
 export type RateLimitScope = "agent_id" | "owner_id";
@@ -42,6 +46,7 @@ export interface JwtPayload {
   verification_level?: unknown;
   capabilities?: unknown;
   delegation_chain?: unknown;
+  cnf?: unknown;
   iss?: unknown;
   sub?: unknown;
   aud?: unknown;
@@ -75,7 +80,18 @@ export interface VerifyAgentTokenOptions {
   jwksUri?: string;
   getKey?: GetKey;
   audience?: string | string[];
+  /**
+   * When true (the default), the token MUST include `aud`.
+   * Set false only for tokens minted before audience was required.
+   */
   requireAudience?: boolean;
+  /**
+   * When set, a token that includes `cnf.jkt` MUST match the RFC 7638
+   * SHA-256 thumbprint of this JWK.
+   */
+  confirmationJwk?: JWK;
+  /** When set, a token that includes `cnf.jkt` MUST equal this value. */
+  expectedJkt?: string;
   minVerificationLevel?: number;
   accessTier?: AccessTier;
   allowlist?: string[];
@@ -114,6 +130,7 @@ export interface VerifiedAgent {
   iat?: number;
   exp?: number;
   jti?: string;
+  cnf?: { jkt: string };
   token: string;
 }
 
@@ -127,7 +144,12 @@ export type AgentIdErrorCode =
   | "AID-007"
   | "AID-008"
   | "AID-009"
-  | "AID-010";
+  | "AID-010"
+  | "AID-011"
+  | "AID-013"
+  | "AID-014"
+  | "AID-016"
+  | "AID-017";
 
 export interface AgentIdErrorBody {
   error: AgentIdErrorCode;
