@@ -1,30 +1,21 @@
-const NAMES: Record<string, number> = {
-  unverified: 0,
-  email: 1,
-  phone: 1,
-  domain: 2,
-  organisation: 3,
-  organization: 3,
-  kyb: 3,
-};
-
 function clampLevel(value: number): number {
   if (!Number.isFinite(value)) return 0;
   return Math.min(3, Math.max(0, Math.trunc(value)));
 }
 
 /**
- * Map the site/spec claim (`"domain"` or `2`) to the integer 0–3 used by
- * `minVerificationLevel`.
+ * Map `verification_level` to the integer 0–3 used by `minVerificationLevel`.
+ * The claim is an integer. Numeric strings `"0"`–`"3"` are accepted.
+ * Name strings are not the claim format and are not mapped.
  */
 export function parseVerificationLevel(value: unknown): number {
   if (value == null) return 0;
   if (typeof value === "number") return clampLevel(value);
   if (typeof value === "string") {
-    const trimmed = value.trim().toLowerCase();
-    if (trimmed in NAMES) return NAMES[trimmed]!;
+    const trimmed = value.trim();
+    if (/^[0-3]$/.test(trimmed)) return Number(trimmed);
     const numeric = Number(trimmed);
-    if (Number.isFinite(numeric)) return clampLevel(numeric);
+    if (Number.isFinite(numeric) && trimmed !== "") return clampLevel(numeric);
   }
   return 0;
 }

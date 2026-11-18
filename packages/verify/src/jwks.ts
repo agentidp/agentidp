@@ -230,15 +230,23 @@ export class RegistryKeySource {
     agentId: string,
     expSeconds?: number,
     now = Date.now(),
-  ): Promise<{ owner_id?: string; owner_name?: string; owner_type?: string; verification_level?: unknown } | undefined> {
+  ): Promise<
+    | {
+        owner_id?: string;
+        owner_type?: string;
+        verification_level?: unknown;
+        verified_domain?: string;
+      }
+    | undefined
+  > {
     const cacheKey = `owner:${registryUrl}:${agentId}`;
     const cached = this.ownerCache.get(cacheKey, now);
     if (cached) {
       return cached as {
         owner_id?: string;
-        owner_name?: string;
         owner_type?: string;
         verification_level?: unknown;
+        verified_domain?: string;
       };
     }
 
@@ -250,11 +258,13 @@ export class RegistryKeySource {
     if (!owner) return undefined;
     const value = {
       owner_id: typeof owner.owner_id === "string" ? owner.owner_id : undefined,
-      owner_name:
-        typeof owner.owner_name === "string" ? owner.owner_name : undefined,
       owner_type:
         typeof owner.owner_type === "string" ? owner.owner_type : undefined,
       verification_level: owner.verification_level,
+      verified_domain:
+        typeof owner.verified_domain === "string"
+          ? owner.verified_domain
+          : undefined,
     };
     const ttl = Math.min(
       this.ttlMs(now, expSeconds, this.ttlSeconds),

@@ -201,7 +201,11 @@ export class AgentAuth {
     if (this.ownerName !== undefined) claims.owner_name = this.ownerName;
     if (this.ownerType !== undefined) claims.owner_type = this.ownerType;
     if (this.verificationLevel !== undefined) {
-      claims.verification_level = this.verificationLevel;
+      const level = Math.trunc(this.verificationLevel);
+      if (!Number.isFinite(level) || level < 0 || level > 3) {
+        throw new Error("verificationLevel must be an integer 0–3");
+      }
+      claims.verification_level = level;
     }
     if (options.capabilities !== undefined) {
       claims.capabilities = options.capabilities;

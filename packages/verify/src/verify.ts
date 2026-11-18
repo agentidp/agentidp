@@ -245,15 +245,16 @@ export async function verifyAgentToken(
   }
 
   let ownerId = optionalString(payload.owner_id);
-  let ownerName = optionalString(payload.owner_name);
+  const ownerName = optionalString(payload.owner_name);
   let ownerType = optionalString(payload.owner_type);
+  let verifiedDomain: string | undefined;
 
-  if (options.lookupOwner && ownerName == null) {
+  if (options.lookupOwner) {
     const lookedUp = await source.lookupOwner(registryUrl, agentId, exp, nowMs);
     if (lookedUp) {
       ownerId = ownerId ?? lookedUp.owner_id;
-      ownerName = lookedUp.owner_name;
       ownerType = ownerType ?? lookedUp.owner_type;
+      verifiedDomain = lookedUp.verified_domain;
       if (payload.verification_level == null && lookedUp.verification_level != null) {
         verificationLevel = parseVerificationLevel(lookedUp.verification_level);
         if (verificationLevel < min) {
@@ -279,9 +280,8 @@ export async function verifyAgentToken(
   if (ownerId !== undefined) agent.owner_id = ownerId;
   if (ownerName !== undefined) agent.owner_name = ownerName;
   if (ownerType !== undefined) agent.owner_type = ownerType;
-  if (payload.verification_level !== undefined) {
-    agent.verification_level = payload.verification_level as number | string;
-  }
+  if (verifiedDomain !== undefined) agent.verified_domain = verifiedDomain;
+  agent.verification_level = verificationLevel;
   if (capabilities !== undefined) agent.capabilities = capabilities;
   if (Array.isArray(payload.delegation_chain)) {
     agent.delegation_chain = payload.delegation_chain;

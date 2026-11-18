@@ -77,9 +77,9 @@ export function lookupRoute(
         status,
         owner: {
           owner_id: "own_T1mR4xBq9",
-          owner_name: "Acme Inc",
           owner_type: "org",
           verification_level: 2,
+          verified_domain: "acme.inc",
         },
         public_key_url: `/api/v1/agents/${agentId}/public-key`,
       },

@@ -48,6 +48,8 @@ describe("token-exchange minted token vector", () => {
     );
     expect(protectedHeader.typ).toBe(AGENTIDP_TOKEN_TYP);
     expect(payload.cnf).toEqual({ jkt: vectors.keys.acting_agent.jkt });
+    expect(payload.verification_level).toBe(2);
+    expect(payload.owner_name).toBeUndefined();
 
     const agent = await verifyAgentToken(vectors.minted_token_example.token, {
       getKey: () => vectors.keys.registry.public_jwk as never,
@@ -57,5 +59,7 @@ describe("token-exchange minted token vector", () => {
     });
     expect(agent.cnf?.jkt).toBe(vectors.keys.acting_agent.jkt);
     expect(agent.aud).toBe(vectors.resource_audience);
+    expect(agent.verification_level).toBe(2);
+    expect(agent.owner_name).toBeUndefined();
   });
 });

@@ -2,6 +2,7 @@ import type { CryptoKey, JWK } from "jose";
 
 export const DEFAULT_REGISTRY_URL = "https://registry.agentidp.dev";
 export const DEFAULT_JWKS_PATH = "/.well-known/jwks.json";
+/** Spec-recommended JWKS / key-cache TTL: 1 hour. Honour a shorter Cache-Control max-age. */
 export const DEFAULT_KEY_CACHE_TTL_SECONDS = 60 * 60;
 /** Status / revocation cache. Registry sends Cache-Control max-age=60. */
 export const DEFAULT_REVOCATION_CACHE_TTL_SECONDS = 60;
@@ -117,11 +118,17 @@ export interface VerifiedAgent {
   agent_version?: string;
   agent_description?: string;
   owner_id?: string;
-  /** Present when the token (or optional lookup) supplies it. Never invented. */
+  /**
+   * Leftover non-normative claim. Present only when the token itself carries it.
+   * Registry lookup does not fill this. Display names come from `verified_domain`.
+   */
   owner_name?: string;
   owner_type?: string;
-  verification_level?: number | string;
+  /** Integer 0–3. Always the parsed level, never a name string. */
+  verification_level?: number;
   verificationLevel: number;
+  /** From registry lookup (Level 2+). Protocol display field; not a bearer claim. */
+  verified_domain?: string;
   capabilities?: string[];
   delegation_chain?: unknown[];
   iss?: string;

@@ -28,15 +28,14 @@ function fakeRes(): FakeRes {
 }
 
 describe("agentIdMiddleware", () => {
-  it("attaches req.agent.owner_name for the site sample", async () => {
+  it("attaches req.agent without requiring owner_name", async () => {
     const keys = await generateAgentKey();
     const auth = new AgentAuth({
       agentId: "ag_7xK9m2nP4qRtL8",
       privateKey: keys.privateJwk,
-      ownerName: "Acme Inc",
       ownerId: "own_T1mR4xBq9",
       ownerType: "org",
-      verificationLevel: "domain",
+      verificationLevel: 2,
     });
     const token = await auth.getToken({ audience: "https://api.example.com" });
 
@@ -57,7 +56,9 @@ describe("agentIdMiddleware", () => {
 
     expect(next).toHaveBeenCalledOnce();
     expect(req).toHaveProperty("agent");
-    expect(req.agent?.owner_name).toBe("Acme Inc");
+    expect(req.agent?.owner_name).toBeUndefined();
+    expect(req.agent?.owner_id).toBe("own_T1mR4xBq9");
+    expect(req.agent?.verification_level).toBe(2);
     expect(req.agent?.agent_id).toBe("ag_7xK9m2nP4qRtL8");
   });
 

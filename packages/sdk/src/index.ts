@@ -50,5 +50,6 @@ export type {
   PrivateKeyInput,
   TokenExchangeRequest,
   TokenExchangeResponse,
+  VerificationLevel,
   VerificationLevelInput,
 } from "./types.js";
