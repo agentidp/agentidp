@@ -1,6 +1,6 @@
 # npm publish checklist
 
-`@agentidp/sdk` and `@agentidp/verify` **0.2.0** are prepared for a public npm release. Do not publish until Tim (AgentIDP) writes an explicit yes.
+`@agentidp/sdk` and `@agentidp/verify` **0.2.0** are the public npm cut. Do not run `npm publish` or `pnpm publish` until Tim (AgentIDP) writes an explicit yes.
 
 This file is a human checklist. Do not run `npm publish` or `pnpm publish` from CI or an agent session unless that approval is on record. Do not put OTP codes, npm tokens, or `.npmrc` auth lines in git, CI logs, or chat.
 

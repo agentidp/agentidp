@@ -1,6 +1,10 @@
 # Contributing to AgentIDP
 
-This repository holds the protocol draft in `spec/` and the TypeScript packages in `packages/`.
+This repository holds the protocol text in `spec/` and the TypeScript packages in `packages/`.
+
+## Claims sync
+
+If you change behaviour in `packages/`, `spec/`, or the matching registry contract, update the claims in README, the spec, COMPETITIVE-LANDSCAPE, and site copy in the same change (or the same PR set). Say so in the PR description. The mapping, path list, and house rules are in [AGENTS.md](AGENTS.md). Never commit secrets. Open a pull request; do not push to `main`. Do not publish to npm or deploy without approval.
 
 ## How to contribute
 
