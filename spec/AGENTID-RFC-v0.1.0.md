@@ -102,7 +102,7 @@ The protocol MUST satisfy the following requirements:
 
 An AgentIDP token is a signed JSON Web Token (JWT) conforming to [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519), with a claim set designed for agent identification. Registry-issued tokens are self-contained: any service with access to the issuer's public key can verify the token without contacting the registry for the signature check.
 
-This document names the credential an **AgentIDP token**. Earlier informal notes used a three-letter acronym for the same object; that acronym is not used here.
+This document names the credential an **AgentIDP token**. JWT `typ` values `AIT+jwt`, `AIT-POP+jwt`, and `AIT-DLG+jwt` are wire identifiers kept for compatibility with the registry. The AIT acronym is retired in prose.
 
 #### 3.1.1 Token Structure
 
@@ -111,7 +111,7 @@ This document names the credential an **AgentIDP token**. Earlier informal notes
 ```json
 {
   "alg": "ES256",
-  "typ": "agentidp+jwt",
+  "typ": "AIT+jwt",
   "kid": "agentidp-2026-03-01"
 }
 ```
@@ -119,7 +119,7 @@ This document names the credential an **AgentIDP token**. Earlier informal notes
 | Field | Status | Description |
 |-------|--------|-------------|
 | `alg` | REQUIRED | ECDSA P-256 for registry-issued tokens |
-| `typ` | REQUIRED | `agentidp+jwt` |
+| `typ` | REQUIRED | `AIT+jwt` (wire identifier; the credential is an AgentIDP token) |
 | `kid` | REQUIRED | Key ID for rotation |
 
 **Payload (Claims)**
@@ -267,7 +267,7 @@ A critical feature of the AgentID protocol is transparent delegation. When Agent
 
 On `POST /api/v1/tokens/exchange`, `delegation_chain` is an ordered array of **compact JWS** hops, from the first delegating agent (index 0) to the hop whose `sub` is the acting agent. Unsigned JSON objects MUST be rejected (`AID-009`). Owner/user hops (`principal_type: user`) are not accepted in this version; they require owner signing keys that this draft does not specify.
 
-Each hop MUST be signed by the **delegating** agent's registered key (`alg` `ES256` or `EdDSA`). The JWT `typ` SHOULD be `agentidp-dlg+jwt`. If `typ` is present, it MUST be `agentidp-dlg+jwt` or `JWT`.
+Each hop MUST be signed by the **delegating** agent's registered key (`alg` `ES256` or `EdDSA`). The JWT `typ` SHOULD be `AIT-DLG+jwt` (wire identifier). If `typ` is present, it MUST be `AIT-DLG+jwt` or `JWT`.
 
 | Claim | Rule |
 |-------|------|
@@ -306,8 +306,8 @@ Content-Type: application/json
   "aud": "https://api.example.com",
   "lifetime": 3600,
   "scopes": ["calendar:read"],
-  "proof": "<compact agentidp-pop+jwt>",
-  "delegation_chain": ["<compact agentidp-dlg+jwt>"]
+  "proof": "<compact AIT-POP+jwt>",
+  "delegation_chain": ["<compact AIT-DLG+jwt>"]
 }
 ```
 
@@ -330,7 +330,7 @@ The proof JWT proves possession of the agent's registered private key.
 |------|------|
 | Compact form | MUST be a three-part JWS |
 | `alg` | MUST be `ES256` or `EdDSA`, matching the registered public JWK |
-| `typ` | SHOULD be `agentidp-pop+jwt`. If present, MUST be `agentidp-pop+jwt` or `JWT` |
+| `typ` | SHOULD be `AIT-POP+jwt` (wire identifier). If present, MUST be `AIT-POP+jwt` or `JWT` |
 | `iss`, `sub` | MUST equal `agent_id` |
 | `aud` | MUST be `{registry origin}/api/v1/tokens/exchange`. Implementations SHOULD also accept `{registry origin}/v1/tokens/exchange` as an alias |
 | `iat`, `exp` | MUST be present. `exp - iat` MUST be greater than 0 and MUST NOT exceed 300 seconds |
@@ -357,8 +357,8 @@ Private members (`d`, RSA `p`/`q`/`dp`/`dq`/`qi`, oct `k`) MUST be rejected with
 
 ```json
 {
-  "token": "<compact agentidp+jwt>",
-  "token_type": "agentidp+jwt",
+  "token": "<compact AgentIDP token>",
+  "token_type": "AIT+jwt",
   "token_id": "tok_...",
   "expires_at": "2026-11-18T17:00:00.000Z",
   "agent_id": "ag_7xK9m2nP4qRt",
@@ -366,7 +366,7 @@ Private members (`d`, RSA `p`/`q`/`dp`/`dq`/`qi`, oct `k`) MUST be rejected with
 }
 ```
 
-The minted token MUST be signed by the registry (`alg=ES256`, `kid` from `/.well-known/jwks.json`). `iss` MUST be the registry origin. `aud` MUST be the requested audience. `capabilities` MUST be the granted subset. `typ` MUST be `agentidp+jwt`. `token_type` SHOULD be `agentidp+jwt`.
+The minted token MUST be signed by the registry (`alg=ES256`, `kid` from `/.well-known/jwks.json`). `iss` MUST be the registry origin. `aud` MUST be the requested audience. `capabilities` MUST be the granted subset. Header `typ` MUST be `AIT+jwt`. `token_type` MUST be `AIT+jwt`. These strings are wire identifiers; the credential is an AgentIDP token.
 
 #### 3.6.5 Confirmation (`cnf.jkt`)
 
@@ -719,8 +719,9 @@ com.acme.memory:export
 
 | Term | Definition |
 |------|------------|
-| **AgentIDP token** | The registry-signed JWT that an agent presents to authenticate itself (`typ: agentidp+jwt`). |
-| **Proof JWT** | Short-lived JWT signed by the agent key and presented at token exchange (`typ: agentidp-pop+jwt`). |
+| **AgentIDP token** | The registry-signed JWT that an agent presents to authenticate itself. Wire `typ` is `AIT+jwt`. |
+| **Proof JWT** | Short-lived JWT signed by the agent key and presented at token exchange. Wire `typ` is `AIT-POP+jwt`. |
+| **Delegation hop** | Compact JWS in `delegation_chain`. Wire `typ` is `AIT-DLG+jwt`. |
 | **Agent** | An autonomous software system that interacts with services on behalf of a principal (human user or another agent). |
 | **Owner** | The human or organisation legally accountable for an agent's actions. |
 | **Principal** | The entity on whose behalf an agent acts. May be a user, an organisation, or another agent. |

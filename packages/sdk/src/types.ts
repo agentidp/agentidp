@@ -5,18 +5,18 @@ export const MAX_TOKEN_LIFETIME_SECONDS = 24 * 60 * 60;
 export const DEFAULT_TOKEN_LIFETIME_SECONDS = 60 * 60;
 export const MIN_TOKEN_LIFETIME_SECONDS = 60;
 
-/** JWT `typ` for a registry-issued AgentIDP token. */
-export const AGENTIDP_TOKEN_TYP = "agentidp+jwt";
-/** JWT `typ` for an agent proof JWT presented at token exchange. */
-export const AGENTIDP_PROOF_TYP = "agentidp-pop+jwt";
-/** JWT `typ` for a signed delegation hop. */
-export const AGENTIDP_DELEGATION_TYP = "agentidp-dlg+jwt";
-
 /**
- * Historical JWT `typ` used by some registry-issued tokens.
- * New protocol text calls the credential an AgentIDP token (`agentidp+jwt`).
+ * Wire JWT `typ` for a registry-issued AgentIDP token.
+ * Human-readable name is "AgentIDP token"; this string is kept for registry compatibility.
  */
-export const AIT_TYP = "AIT+jwt";
+export const AGENTIDP_TOKEN_TYP = "AIT+jwt";
+/** Wire JWT `typ` for an agent proof JWT presented at token exchange. */
+export const AGENTIDP_PROOF_TYP = "AIT-POP+jwt";
+/** Wire JWT `typ` for a signed delegation hop. */
+export const AGENTIDP_DELEGATION_TYP = "AIT-DLG+jwt";
+
+/** Same wire value as {@link AGENTIDP_TOKEN_TYP}. */
+export const AIT_TYP = AGENTIDP_TOKEN_TYP;
 
 export const PROOF_MAX_LIFETIME_SECONDS = 300;
 export const DEFAULT_PROOF_LIFETIME_SECONDS = 60;

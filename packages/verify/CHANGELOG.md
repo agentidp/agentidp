@@ -16,7 +16,7 @@ First workspace release, prepared for a future public npm publish. Version match
 - Optional registry JWKS, public-key, status, and owner lookup
 - In-memory key/status cache and optional process-local rate limit
 - `AgentIdError` codes (`AID-001` through `AID-011`, plus `AID-013`, `AID-014`, `AID-016`, `AID-017`)
-- Acceptance of `typ: agentidp+jwt` in addition to the historical `AIT+jwt`
+- Registry wire `typ` is `AIT+jwt`. Verifiers also accept `agentidp+jwt` as an alias.
 - When `cnf.jkt` is present, format checks and optional consistency with `confirmationJwk` / `expectedJkt`
 
 ### Changed

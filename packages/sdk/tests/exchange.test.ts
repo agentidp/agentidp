@@ -91,7 +91,7 @@ describe("AgentAuth exchange", () => {
           status: 200,
           json: async () => ({
             token: "header.payload.sig",
-            token_type: "agentidp+jwt",
+            token_type: "AIT+jwt",
             token_id: "tok_1",
             expires_at: "2026-11-18T17:00:00.000Z",
             agent_id: "ag_7xK9m2nP4qRtL8",

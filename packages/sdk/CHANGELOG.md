@@ -25,7 +25,7 @@ First workspace release, prepared for a future public npm publish. Version match
 ### Changed
 
 - When `apiKey` or `AGENTIDP_API_KEY` is set, `getToken` calls token exchange with a proof JWT instead of signing locally. Without an API key, `getToken` still signs locally. Local mint is not the registry path.
-- Proof and minted-token JWT `typ` values for the exchange path are `agentidp-pop+jwt` and `agentidp+jwt`. `AIT_TYP` (`AIT+jwt`) remains exported for local mint and historical tokens.
+- Proof, hop, and minted-token JWT `typ` values match the registry wire identifiers: `AIT-POP+jwt`, `AIT-DLG+jwt`, and `AIT+jwt`. The human-readable name is AgentIDP token.
 
 ### Breaking
 

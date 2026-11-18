@@ -5,6 +5,7 @@ export { parseVerificationLevel } from "./levels.js";
 export { MemoryRateLimitStore, defaultRateLimitStore } from "./rate-limit.js";
 export {
   AGENTIDP_TOKEN_TYP,
+  AGENTIDP_TOKEN_TYP_ALIAS,
   AIT_TYP,
   DEFAULT_JWKS_PATH,
   DEFAULT_KEY_CACHE_TTL_SECONDS,

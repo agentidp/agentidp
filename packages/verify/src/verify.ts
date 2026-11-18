@@ -22,12 +22,18 @@ import type {
 } from "./types.js";
 import {
   AGENTIDP_TOKEN_TYP,
+  AGENTIDP_TOKEN_TYP_ALIAS,
   AIT_TYP,
   DEFAULT_KEY_CACHE_TTL_SECONDS,
   DEFAULT_REVOCATION_CACHE_TTL_SECONDS,
 } from "./types.js";
 
-const ACCEPTED_TYPS = new Set([AGENTIDP_TOKEN_TYP, AIT_TYP, "JWT"]);
+const ACCEPTED_TYPS = new Set([
+  AGENTIDP_TOKEN_TYP,
+  AGENTIDP_TOKEN_TYP_ALIAS,
+  AIT_TYP,
+  "JWT",
+]);
 const JKT_PATTERN = /^[A-Za-z0-9_-]{43}$/;
 
 function asCnfJkt(value: unknown): string | undefined {
@@ -186,7 +192,9 @@ export async function verifyAgentToken(
       currentDate: now,
       clockTolerance: tolerance,
       typ:
-        header.typ === AIT_TYP || header.typ === AGENTIDP_TOKEN_TYP
+        header.typ === AIT_TYP ||
+        header.typ === AGENTIDP_TOKEN_TYP ||
+        header.typ === AGENTIDP_TOKEN_TYP_ALIAS
           ? header.typ
           : undefined,
     });

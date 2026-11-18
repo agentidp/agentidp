@@ -1,8 +1,34 @@
-import { calculateJwkThumbprint } from "jose";
+import { calculateJwkThumbprint, SignJWT } from "jose";
 import { describe, expect, it } from "vitest";
 
-import { AgentIdError, verifyAgentToken } from "../src/index.js";
+import { AgentIdError, AGENTIDP_TOKEN_TYP_ALIAS, verifyAgentToken } from "../src/index.js";
 import { generatePair, signAit } from "./helpers.js";
+
+describe("typ alias", () => {
+  it("accepts agentidp+jwt as a verifier alias for AIT+jwt", async () => {
+    const pair = await generatePair();
+    const now = Math.floor(Date.now() / 1000);
+    const token = await new SignJWT({
+      agent_id: "ag_alias",
+      aud: "https://api.example.com",
+    })
+      .setProtectedHeader({
+        alg: "ES256",
+        typ: AGENTIDP_TOKEN_TYP_ALIAS,
+        kid: pair.kid,
+      })
+      .setSubject("ag_alias")
+      .setIssuedAt(now)
+      .setExpirationTime(now + 3600)
+      .sign(pair.privateKey);
+
+    const agent = await verifyAgentToken(token, {
+      getKey: () => pair.publicJwk,
+      audience: "https://api.example.com",
+    });
+    expect(agent.agent_id).toBe("ag_alias");
+  });
+});
 
 describe("required aud", () => {
   it("rejects a token with no aud (AID-011)", async () => {

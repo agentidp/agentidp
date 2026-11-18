@@ -131,7 +131,7 @@ Set `checkRevocation: true` when a registry is reachable. Set `lookupOwner: true
 
 Full text: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md). Test vectors: [`spec/vectors/token-exchange-v0.1.json`](spec/vectors/token-exchange-v0.1.json).
 
-An AgentIDP token is an ES256 JWT (`typ: agentidp+jwt`) with agent identity, owner verification, capabilities, required `aud`, and `cnf.jkt` on tokens minted by exchange. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the token without a round-trip. Resource-server DPoP is not implemented.
+An AgentIDP token is an ES256 JWT. The wire `typ` is `AIT+jwt` (kept for registry compatibility; the AIT acronym is retired in prose). Claims include agent identity, owner verification, capabilities, required `aud`, and `cnf.jkt` on tokens minted by exchange. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the token without a round-trip. Resource-server DPoP is not implemented.
 
 ## Contributing
 

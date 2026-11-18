@@ -5,9 +5,12 @@ export const DEFAULT_JWKS_PATH = "/.well-known/jwks.json";
 export const DEFAULT_KEY_CACHE_TTL_SECONDS = 60 * 60;
 /** Status / revocation cache. Registry sends Cache-Control max-age=60. */
 export const DEFAULT_REVOCATION_CACHE_TTL_SECONDS = 60;
+/** Wire JWT `typ` for a registry-issued AgentIDP token. */
 export const AIT_TYP = "AIT+jwt";
-/** JWT `typ` for a registry-issued AgentIDP token. */
-export const AGENTIDP_TOKEN_TYP = "agentidp+jwt";
+/** Same wire value as {@link AIT_TYP}. */
+export const AGENTIDP_TOKEN_TYP = AIT_TYP;
+/** Alias accepted by verifiers; not emitted on the wire. */
+export const AGENTIDP_TOKEN_TYP_ALIAS = "agentidp+jwt";
 
 export type AccessTier = "open" | "authenticated" | "permissioned";
 export type RateLimitScope = "agent_id" | "owner_id";
