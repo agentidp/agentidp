@@ -1,23 +1,27 @@
 # npm publish checklist
 
-`@agentidp/sdk` and `@agentidp/verify` are prepared for a public npm release. Do not publish until Tim (AgentIDP) writes an explicit yes.
+`@agentidp/sdk` and `@agentidp/verify` **0.2.0** are prepared for a public npm release. Do not publish until Tim (AgentIDP) writes an explicit yes.
 
-This file is a human checklist. Do not run `npm publish` or `pnpm publish` from CI or an agent session unless that approval is on record.
+This file is a human checklist. Do not run `npm publish` or `pnpm publish` from CI or an agent session unless that approval is on record. Do not put OTP codes, npm tokens, or `.npmrc` auth lines in git, CI logs, or chat.
 
 ## Versions
 
-Both packages are **0.1.0**, matching the protocol draft (`spec/AGENTID-RFC-v0.1.0.md`) and the repo root `package.json`. Keep them in lockstep for this first public release.
+Both packages are **0.2.0** (lockstep). They implement spec v0.2 and the registry `/api/v1/` contract. JWT `typ` strings stay `AIT+jwt`, `AIT-POP+jwt`, and `AIT-DLG+jwt`. Both are `"type": "module"`; from CommonJS use `const { AgentAuth } = await import("@agentidp/sdk")`.
 
-[PR #6](https://github.com/agentidp/agentidp/pull/6) (JWKS + revocation) does not change `package.json` or publish metadata. Merge it before the first publish only if that verifier behavior should be in the 0.1.0 tarball. Otherwise publish from `main` after this readiness PR lands.
+The RFC file in-tree is still `spec/AGENTID-RFC-v0.1.0.md`. Do not publish `0.1.0`; that workspace cut was never released.
+
+Tarball contents are enforced by `pnpm test:pack` and the `pack.test.ts` files: `dist/`, `README.md`, `LICENSE`, `CHANGELOG.md`, and `package.json` only. Spec vectors, tests, `.env`, and JWK private members are excluded.
 
 ## Preconditions
 
 - [ ] Written approval from Tim to publish
-- [ ] This readiness change is on `main`
-- [ ] `pnpm install && pnpm build && pnpm test && pnpm typecheck` is green
-- [ ] Each package `package.json` has no `"private": true`
+- [ ] This 0.2.0 readiness change is on `main`
+- [ ] You own or have publish rights on the `@agentidp` npm org (`npm org ls agentidp`)
+- [ ] 2FA is enabled on the npm account that will publish
+- [ ] You are logged in as that account (`npm whoami`)
+- [ ] `pnpm install && pnpm build && pnpm typecheck && pnpm test && pnpm test:pack` is green
+- [ ] Each package `package.json` has `"version": "0.2.0"` and no `"private": true`
 - [ ] Each package has `"publishConfig": { "access": "public" }`
-- [ ] You are logged in as an `@agentidp` org member (`npm whoami`)
 - [ ] No `.npmrc` with tokens is committed
 
 ## Dry run (safe)
@@ -27,32 +31,35 @@ From the repo root, after `pnpm build`:
 ```bash
 pnpm --filter @agentidp/sdk pack --dry-run
 pnpm --filter @agentidp/verify pack --dry-run
+pnpm test:pack
 ```
 
-Confirm each tarball includes `dist/index.js`, `dist/index.d.ts`, `README.md`, `CHANGELOG.md`, and `LICENSE`.
+Confirm each tarball includes `dist/index.js`, `dist/index.d.ts`, `README.md`, `CHANGELOG.md`, and `LICENSE`, and does not include `spec/vectors`, `tests`, or `.env`.
 
 ## Publish (human, after approval)
 
-From the repo root:
+From a clean checkout of `main`, with 2FA available. Publish with provenance so the npm page can show the GitHub repo:
 
 ```bash
-pnpm --filter @agentidp/sdk publish --access public
-pnpm --filter @agentidp/verify publish --access public
+pnpm --filter @agentidp/sdk publish --access public --provenance
+pnpm --filter @agentidp/verify publish --access public --provenance
 ```
 
 Or, from each package directory after `pnpm build`:
 
 ```bash
-npm publish --access public
+npm publish --access public --provenance
 ```
+
+`--provenance` needs an npm CLI that supports it and an identity npm can verify (interactive 2FA publish from a repo remote, or a trusted publisher). If provenance is unavailable in that shell, stop and use a GitHub Actions trusted publisher later. Do not publish without access `public`.
 
 Do not put OTP codes, npm tokens, or `.npmrc` auth lines in git, CI logs, or chat.
 
 ## After publish
 
-- `npm view @agentidp/sdk version` and `npm view @agentidp/verify version` should show `0.1.0`
-- Optional git tags: `sdk-v0.1.0` and `verify-v0.1.0`
-- Update site copy if it still says the packages are unpublished
+- `npm view @agentidp/sdk version` and `npm view @agentidp/verify version` should show `0.2.0`
+- Optional git tags: `sdk-v0.2.0` and `verify-v0.2.0`
+- Update site copy if it still says the packages are unpublished or still lists `0.1.0`
 
 ## What this repo must not do
 

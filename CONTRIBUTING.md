@@ -25,7 +25,7 @@ This repository holds the protocol draft in `spec/` and the TypeScript packages 
 1. Branch from `main`.
 2. Change `packages/sdk` and/or `packages/verify`.
 3. Keep Apache-2.0. Do not publish to npm from a contributor machine. See [docs/npm-publish.md](docs/npm-publish.md).
-4. Run `pnpm test`, `pnpm typecheck`, and `pnpm build`.
+4. Run `pnpm test`, `pnpm typecheck`, `pnpm build`, and `pnpm test:pack`.
 5. Update the package `CHANGELOG.md` when the public API or version changes.
 6. Open a pull request. Do not commit secrets, `.npmrc` tokens, or npm credentials; tests generate keys at runtime.
 

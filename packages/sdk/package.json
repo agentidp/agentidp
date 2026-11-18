@@ -1,6 +1,6 @@
 {
   "name": "@agentidp/sdk",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Agent-side AgentIDP SDK. Generate an agent key, build a proof JWT, and exchange it for an AgentIDP token.",
   "license": "Apache-2.0",
   "type": "module",

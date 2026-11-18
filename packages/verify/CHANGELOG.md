@@ -5,6 +5,21 @@ All notable changes to `@agentidp/verify` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2026-11-18
+
+Lockstep npm cut with `@agentidp/sdk`. Implements spec v0.2 and the registry `/api/v1/` contract. JWT `typ` stays `AIT+jwt`. Verifiers also accept `agentidp+jwt` as an alias. 0.1.0 was never published.
+
+### Added
+
+- When `cnf.jkt` is present, format checks (RFC 7638 SHA-256 thumbprint) and optional consistency with `confirmationJwk` / `expectedJkt`.
+- `aud` required by default. Missing `aud` is `AID-011`. Set `requireAudience: false` for tokens minted before this rule.
+
+### Breaking
+
+- Tokens without `aud` fail unless `requireAudience: false`.
+
+This verifier does not check a DPoP proof on resource-server requests (`DPoP` header, `htm`/`htu`/`ath`).
+
 ## [0.1.0] - 2026-10-26
 
 First workspace release, prepared for a future public npm publish. Version matches protocol draft v0.1.0 and the repo root.
