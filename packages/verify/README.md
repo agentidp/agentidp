@@ -53,7 +53,7 @@ On success the middleware sets `req.agent`. `owner_name` is not required. If a l
 
 Default issuer: `https://registry.agentidp.dev` via `AGENTIDP_REGISTRY_URL` or `registryUrl`.
 
-Contract locked to `/api/v1/` plus well-known JWKS (Connor, `agentidp/registry` main). There are no bare `/v1/...` routes. The registry host is not live yet; tests mock these paths.
+Contract locked to `/api/v1/` plus well-known JWKS (Connor, `agentidp/registry` main). There are no bare `/v1/...` routes. The registry is live at `https://registry.agentidp.dev`; tests mock these paths.
 
 | Method | Path | Body |
 | --- | --- | --- |

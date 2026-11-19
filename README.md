@@ -111,7 +111,7 @@ The default issuer is `https://registry.agentidp.dev`. Point the SDKs at a runni
 | `AGENTIDP_API_KEY` | `@agentidp/sdk` | none (owner API key for token exchange) |
 | `AGENTIDP_JWKS_URI` | `@agentidp/verify` | `{AGENTIDP_REGISTRY_URL}/.well-known/jwks.json` |
 
-Registry contract locked to `/api/v1/` plus well-known JWKS (`agentidp/registry` main, Connor). The host is not live yet. There are no bare `/v1/...` routes.
+Registry contract locked to `/api/v1/` plus well-known JWKS (`agentidp/registry` main, Connor). The registry is live at `https://registry.agentidp.dev`. There are no bare `/v1/...` routes.
 
 | Method | Path | Purpose |
 | --- | --- | --- |

@@ -66,7 +66,7 @@ The AI agent identity space is active but fragmented. There are 30+ efforts acro
 
 ## Where AgentIDP Sits
 
-AgentIDP is positioned as an **open protocol** that can sit next to a registry and commercial services. As of this draft, the spec and in-repo SDKs exist; a public registry and npm packages are not live. No current competitor is treated as a finished stack here.
+AgentIDP is positioned as an **open protocol** that can sit next to a registry and commercial services. As of this draft, the spec, in-repo SDKs and a public registry at `registry.agentidp.dev` exist; the npm packages are not published. No current competitor is treated as a finished stack here.
 
 ### The Gap in the Market
 

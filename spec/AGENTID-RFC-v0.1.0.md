@@ -56,7 +56,7 @@ This specification defines:
 
 ### Design Principles
 
-**Open specification.** This document is Apache 2.0. Anyone MAY implement a compliant registry or verifier. This repository does not ship an SDK and does not operate a public registry. A hosted registry, if one is offered later, MAY be commercial; that is out of scope for this draft.
+**Open specification.** This document is Apache 2.0. Anyone MAY implement a compliant registry or verifier. A public registry runs at `registry.agentidp.dev`; it is one implementation, not part of the protocol. A hosted registry MAY be commercial; that is out of scope for this draft.
 
 ---
 
@@ -216,7 +216,7 @@ Agent registration is a two-phase process: owner verification (performed once) f
 
 **Phase 1: Owner Registration**
 
-1. Owner signs up at an AgentIDP-compliant registry. This draft uses `registry.agentidp.dev` as an example hostname; it is not a public service in this version.
+1. Owner signs up at an AgentIDP-compliant registry. This draft uses `registry.agentidp.dev`, the public registry, in its examples.
 2. Owner completes verification to their desired level (Section 3.2): Unverified (account only), Email, Domain, or Organisation (KYB).
 3. Registry issues an `owner_id` and an owner API key for agent management operations.
 
@@ -671,7 +671,7 @@ The specification is maintained in a public GitHub repository with an RFC-style 
 
 ### 8.2 Registry
 
-The hostname `registry.agentidp.dev` is reserved as an example issuer (`iss`). A public registry is **not** available in this draft. Additional registries MAY operate later as federated trust providers; federation is not specified here.
+The public registry at `registry.agentidp.dev` is the issuer (`iss`) used in the examples. Additional registries MAY operate later as federated trust providers; federation is not specified here.
 
 ### 8.3 Hosted registry (optional, later)
 
@@ -684,7 +684,7 @@ If a hosted registry is operated later, it MAY be commercial. This specification
 | Version | Status | Focus |
 |---------|--------|-------|
 | **v0.1.0** | Draft (this document) | AgentIDP token format, token exchange with proof JWT, `cnf.jkt`, integer verification levels 0–3, access tiers, signed narrowing hops at exchange (unsigned v0.1 hops superseded), registry shape |
-| Later | Not started | npm publish, a hosted public registry, federation, and framework adapters |
+| Later | Not started | npm publish, federation, and framework adapters |
 
 ---
 
