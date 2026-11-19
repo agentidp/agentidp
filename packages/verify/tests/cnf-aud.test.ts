@@ -94,6 +94,7 @@ describe("cnf.jkt", () => {
     );
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         getKey: () => pair.publicJwk,
         confirmationJwk: pair.publicJwk,
       }),

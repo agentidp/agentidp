@@ -80,7 +80,16 @@ export interface VerifyAgentTokenOptions {
   registryUrl?: string;
   jwksUri?: string;
   getKey?: GetKey;
+  /**
+   * This service's own URL. Required unless `requireAudience` is false:
+   * the token `aud` must match one of these values.
+   */
   audience?: string | string[];
+  /**
+   * Expected `iss`. Defaults to `registryUrl` when the key came from the
+   * registry JWKS, and is not checked for a key `getKey` returned unless set.
+   */
+  issuer?: string | string[];
   /**
    * When true (the default), the token MUST include `aud`.
    * Set false only for tokens minted before audience was required.

@@ -88,6 +88,7 @@ import { agentIdMiddleware } from "@agentidp/verify";
 app.post(
   "/api/submit",
   agentIdMiddleware({
+    audience: "https://api.example.com", // this service's own URL
     accessTier: "authenticated",
     minVerificationLevel: 2,
     rateLimit: { requestsPerHour: 100, scope: "agent_id" },

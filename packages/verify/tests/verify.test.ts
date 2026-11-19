@@ -81,10 +81,16 @@ describe("verifyAgentToken", () => {
       good.kid,
     );
     await expect(
-      verifyAgentToken(token, { getKey: () => other.publicJwk }),
+      verifyAgentToken(token, {
+        audience: "https://api.example.com",
+        getKey: () => other.publicJwk,
+      }),
     ).rejects.toBeInstanceOf(AgentIdError);
     await expect(
-      verifyAgentToken(token, { getKey: () => other.publicJwk }),
+      verifyAgentToken(token, {
+        audience: "https://api.example.com",
+        getKey: () => other.publicJwk,
+      }),
     ).rejects.toMatchObject({ code: "AID-001" });
   });
 
@@ -98,6 +104,7 @@ describe("verifyAgentToken", () => {
     );
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         getKey: () => pair.publicJwk,
         now: () => new Date(Date.now() + 120_000),
         clockToleranceSeconds: 0,
@@ -133,6 +140,7 @@ describe("verifyAgentToken", () => {
     );
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         getKey: () => pair.publicJwk,
         minVerificationLevel: 2,
       }),
@@ -148,6 +156,7 @@ describe("verifyAgentToken", () => {
     );
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         getKey: () => pair.publicJwk,
         accessTier: "permissioned",
         allowlist: ["ag_allowed"],
@@ -155,6 +164,7 @@ describe("verifyAgentToken", () => {
     ).rejects.toMatchObject({ code: "AID-008" });
 
     const ok = await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       getKey: () => pair.publicJwk,
       accessTier: "permissioned",
       allowlist: ["own_x"],
@@ -166,10 +176,15 @@ describe("verifyAgentToken", () => {
     const pair = await generatePair("jwks-kid");
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_jwks", aud: "https://api.example.com" },
+      {
+        agent_id: "ag_jwks",
+        aud: "https://api.example.com",
+        iss: "https://registry.test",
+      },
       pair.kid,
     );
     const agent = await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       registryUrl: "https://registry.test",
       fetch: jsonFetch({
         "https://registry.test/.well-known/jwks.json": {
@@ -180,23 +195,109 @@ describe("verifyAgentToken", () => {
     expect(agent.agent_id).toBe("ag_jwks");
   });
 
-  it("falls back to /api/v1/agents/{id}/public-key for agent-signed tokens", async () => {
+  it("rejects a token signed by the agent's own registered key", async () => {
     const pair = await generatePair("agent-kid");
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_self", aud: "https://api.example.com" },
+      {
+        agent_id: "ag_self",
+        aud: "https://api.example.com",
+        iss: "https://registry.test",
+        verification_level: 3,
+      },
       pair.kid,
     );
-    const agent = await verifyAgentToken(token, {
-      registryUrl: "https://registry.test",
-      fetch: jsonFetch({
-        "https://registry.test/.well-known/jwks.json": { body: { keys: [] } },
-        "https://registry.test/api/v1/agents/ag_self/public-key": {
-          body: pair.publicJwk,
-        },
+    const calls: string[] = [];
+    await expect(
+      verifyAgentToken(token, {
+        audience: "https://api.example.com",
+        registryUrl: "https://registry.test",
+        fetch: jsonFetch(
+          {
+            "https://registry.test/.well-known/jwks.json": { body: { keys: [] } },
+            "https://registry.test/api/v1/agents/ag_self/public-key": {
+              body: pair.publicJwk,
+            },
+          },
+          calls,
+        ),
       }),
-    });
-    expect(agent.agent_id).toBe("ag_self");
+    ).rejects.toMatchObject({ code: "AID-001" });
+    expect(calls.some((url) => url.endsWith("/public-key"))).toBe(false);
+  });
+
+  it("rejects a kid that is not in a single-key JWKS", async () => {
+    const registry = await generatePair("registry-kid");
+    const attacker = await generatePair("attacker-kid");
+    const token = await signAit(
+      attacker.privateKey,
+      { agent_id: "ag_x", aud: "https://api.example.com", iss: "https://registry.test" },
+      attacker.kid,
+    );
+    await expect(
+      verifyAgentToken(token, {
+        audience: "https://api.example.com",
+        registryUrl: "https://registry.test",
+        fetch: jsonFetch({
+          "https://registry.test/.well-known/jwks.json": {
+            body: { keys: [registry.publicJwk] },
+          },
+        }),
+      }),
+    ).rejects.toMatchObject({ code: "AID-001" });
+  });
+
+  it("refuses to run without an audience option", async () => {
+    const pair = await generatePair();
+    const token = await signAit(
+      pair.privateKey,
+      { agent_id: "ag_noaud", aud: "https://other.example.com" },
+      pair.kid,
+    );
+    await expect(
+      verifyAgentToken(token, { getKey: () => pair.publicJwk }),
+    ).rejects.toMatchObject({ code: "AID-011" });
+  });
+
+  it("checks the issuer when getKey returns nothing and the JWKS is used", async () => {
+    const pair = await generatePair("jwks-kid");
+    const token = await signAit(
+      pair.privateKey,
+      { agent_id: "ag_iss2", aud: "https://api.example.com", iss: "https://evil.test" },
+      pair.kid,
+    );
+    await expect(
+      verifyAgentToken(token, {
+        audience: "https://api.example.com",
+        getKey: () => undefined,
+        registryUrl: "https://registry.test",
+        fetch: jsonFetch({
+          "https://registry.test/.well-known/jwks.json": {
+            body: { keys: [pair.publicJwk] },
+          },
+        }),
+      }),
+    ).rejects.toMatchObject({ code: "AID-001" });
+  });
+
+  it("rejects a registry-signed token with the wrong issuer", async () => {
+    const pair = await generatePair("jwks-kid");
+    const token = await signAit(
+      pair.privateKey,
+      { agent_id: "ag_iss", aud: "https://api.example.com", iss: "https://evil.test" },
+      pair.kid,
+    );
+    await expect(
+      verifyAgentToken(token, {
+        audience: "https://api.example.com",
+        registryUrl: "https://registry.test",
+        fetch: jsonFetch({
+          "https://registry.test/.well-known/jwks.json": {
+            body: { keys: [pair.publicJwk] },
+          },
+        }),
+      }),
+    ).rejects.toMatchObject({ code: "AID-001" });
   });
 
   it("rejects revoked agents when checkRevocation is on", async () => {
@@ -208,6 +309,7 @@ describe("verifyAgentToken", () => {
     );
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         getKey: () => pair.publicJwk,
         checkRevocation: true,
         registryUrl: "https://registry.test",
@@ -228,6 +330,7 @@ describe("verifyAgentToken", () => {
       pair.kid,
     );
     const agent = await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       getKey: () => pair.publicJwk,
       lookupOwner: true,
       registryUrl: "https://registry.test",

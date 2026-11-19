@@ -14,7 +14,6 @@ export {
 } from "./types.js";
 export {
   agentLookupUrl,
-  agentPublicKeyUrl,
   agentStatusUrl,
   jwksUrl,
 } from "./registry.js";

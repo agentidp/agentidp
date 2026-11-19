@@ -4,9 +4,7 @@ import { AgentIdError, verifyAgentToken } from "../src/index.js";
 import { cacheTtlMs } from "../src/jwks.js";
 import {
   lookupRoute,
-  publicKeyRoute,
   REGISTRY,
-  revokedPublicKeyRoute,
   statusRoute,
   jwksRoute,
 } from "./fixtures/registry-contract.js";
@@ -25,17 +23,19 @@ describe("JWKS fetch and cache", () => {
     const pair = await generatePair("jwks-kid");
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_jwks", aud: "https://api.example.com" },
+      { agent_id: "ag_jwks", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
     );
     const calls: string[] = [];
     const fetchImpl = jsonFetch(jwksRoute([pair.publicJwk]), calls);
 
     const first = await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       registryUrl: REGISTRY,
       fetch: fetchImpl,
     });
     const second = await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       registryUrl: REGISTRY,
       fetch: fetchImpl,
     });
@@ -49,7 +49,7 @@ describe("JWKS fetch and cache", () => {
     const pair = await generatePair("expire-kid");
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_expire", aud: "https://api.example.com" },
+      { agent_id: "ag_expire", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
     );
     const calls: string[] = [];
@@ -57,12 +57,14 @@ describe("JWKS fetch and cache", () => {
     const t0 = Date.now();
 
     await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       registryUrl: REGISTRY,
       fetch: fetchImpl,
       keyCacheTtlSeconds: 2,
       now: () => new Date(t0),
     });
     await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       registryUrl: REGISTRY,
       fetch: fetchImpl,
       keyCacheTtlSeconds: 2,
@@ -76,7 +78,7 @@ describe("JWKS fetch and cache", () => {
     const pair = await generatePair("cc-kid");
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_cc", aud: "https://api.example.com" },
+      { agent_id: "ag_cc", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
     );
     const calls: string[] = [];
@@ -87,12 +89,14 @@ describe("JWKS fetch and cache", () => {
     const t0 = Date.now();
 
     await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       registryUrl: REGISTRY,
       fetch: fetchImpl,
       keyCacheTtlSeconds: 3600,
       now: () => new Date(t0),
     });
     await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       registryUrl: REGISTRY,
       fetch: fetchImpl,
       keyCacheTtlSeconds: 3600,
@@ -106,7 +110,7 @@ describe("JWKS fetch and cache", () => {
     const pair = await generatePair("missing-kid");
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_miss", aud: "https://api.example.com" },
+      { agent_id: "ag_miss", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
     );
     const calls: string[] = [];
@@ -114,35 +118,13 @@ describe("JWKS fetch and cache", () => {
 
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         registryUrl: REGISTRY,
         fetch: fetchImpl,
       }),
     ).rejects.toMatchObject({ code: "AID-001" });
 
     expect(calls.filter((url) => url.endsWith("/.well-known/jwks.json")).length).toBeGreaterThanOrEqual(2);
-  });
-
-  it("falls back to /api/v1/agents/{id}/public-key for agent-signed tokens", async () => {
-    const pair = await generatePair("agent-kid");
-    const token = await signAit(
-      pair.privateKey,
-      { agent_id: "ag_self", aud: "https://api.example.com" },
-      pair.kid,
-    );
-    const calls: string[] = [];
-    const agent = await verifyAgentToken(token, {
-      registryUrl: REGISTRY,
-      fetch: jsonFetch(
-        {
-          ...jwksRoute([]),
-          ...publicKeyRoute("ag_self", pair.publicJwk),
-        },
-        calls,
-      ),
-    });
-    expect(agent.agent_id).toBe("ag_self");
-    expect(calls.some((url) => url.includes("/v1/") && !url.includes("/api/v1/"))).toBe(false);
-    expect(calls).toContain(`${REGISTRY}/api/v1/agents/ag_self/public-key`);
   });
 });
 
@@ -151,10 +133,11 @@ describe("revocation status", () => {
     const pair = await generatePair();
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_ok", aud: "https://api.example.com" },
+      { agent_id: "ag_ok", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
     );
     const agent = await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       getKey: () => pair.publicJwk,
       checkRevocation: true,
       registryUrl: REGISTRY,
@@ -167,11 +150,12 @@ describe("revocation status", () => {
     const pair = await generatePair();
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_rev", aud: "https://api.example.com" },
+      { agent_id: "ag_rev", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
     );
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         getKey: () => pair.publicJwk,
         checkRevocation: true,
         registryUrl: REGISTRY,
@@ -184,11 +168,12 @@ describe("revocation status", () => {
     const pair = await generatePair();
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_sus", aud: "https://api.example.com" },
+      { agent_id: "ag_sus", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
     );
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         getKey: () => pair.publicJwk,
         checkRevocation: true,
         registryUrl: REGISTRY,
@@ -201,11 +186,12 @@ describe("revocation status", () => {
     const pair = await generatePair();
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_look", aud: "https://api.example.com" },
+      { agent_id: "ag_look", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
     );
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         getKey: () => pair.publicJwk,
         checkRevocation: true,
         registryUrl: REGISTRY,
@@ -218,11 +204,12 @@ describe("revocation status", () => {
     const pair = await generatePair();
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_down", aud: "https://api.example.com" },
+      { agent_id: "ag_down", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
     );
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         getKey: () => pair.publicJwk,
         checkRevocation: true,
         registryUrl: REGISTRY,
@@ -235,11 +222,12 @@ describe("revocation status", () => {
     const pair = await generatePair();
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_net", aud: "https://api.example.com" },
+      { agent_id: "ag_net", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
     );
     await expect(
       verifyAgentToken(token, {
+        audience: "https://api.example.com",
         getKey: () => pair.publicJwk,
         checkRevocation: true,
         registryUrl: REGISTRY,
@@ -250,29 +238,11 @@ describe("revocation status", () => {
     ).rejects.toMatchObject({ code: "AID-001" });
   });
 
-  it("treats a revoked public-key response as AID-003", async () => {
-    const pair = await generatePair("rev-key");
-    const token = await signAit(
-      pair.privateKey,
-      { agent_id: "ag_pkrev", aud: "https://api.example.com" },
-      pair.kid,
-    );
-    await expect(
-      verifyAgentToken(token, {
-        registryUrl: REGISTRY,
-        fetch: jsonFetch({
-          ...jwksRoute([]),
-          ...revokedPublicKeyRoute("ag_pkrev"),
-        }),
-      }),
-    ).rejects.toMatchObject({ code: "AID-003" });
-  });
-
   it("keeps revocation freshness at min(token remaining life, cache TTL)", async () => {
     const pair = await generatePair();
     const token = await signAit(
       pair.privateKey,
-      { agent_id: "ag_fresh", aud: "https://api.example.com" },
+      { agent_id: "ag_fresh", aud: "https://api.example.com", iss: REGISTRY },
       pair.kid,
       30,
     );
@@ -281,6 +251,7 @@ describe("revocation status", () => {
     const t0 = Date.now();
 
     await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       getKey: () => pair.publicJwk,
       checkRevocation: true,
       registryUrl: REGISTRY,
@@ -289,6 +260,7 @@ describe("revocation status", () => {
       now: () => new Date(t0),
     });
     await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       getKey: () => pair.publicJwk,
       checkRevocation: true,
       registryUrl: REGISTRY,
@@ -297,6 +269,7 @@ describe("revocation status", () => {
       now: () => new Date(t0 + 10_000),
     });
     await verifyAgentToken(token, {
+      audience: "https://api.example.com",
       getKey: () => pair.publicJwk,
       checkRevocation: true,
       registryUrl: REGISTRY,
