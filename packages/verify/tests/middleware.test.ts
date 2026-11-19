@@ -93,6 +93,7 @@ describe("agentIdMiddleware", () => {
     const token = await auth.getToken({ audience: "https://api.example.com" });
     const store = new MemoryRateLimitStore();
     const middleware = agentIdMiddleware({
+      audience: "https://api.example.com",
       accessTier: "authenticated",
       getKey: () => keys.publicJwk,
       rateLimit: { requestsPerHour: 2, scope: "agent_id" },

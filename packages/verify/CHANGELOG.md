@@ -17,6 +17,13 @@ Lockstep npm cut with `@agentidp/sdk`. Implements spec v0.2 and the registry `/a
 ### Breaking
 
 - Tokens without `aud` fail unless `requireAudience: false`.
+- The `audience` option is required. Without it verification fails with `AID-011`, unless `requireAudience: false`.
+- `exp` is required. `iss` must equal `registryUrl` when keys come from the registry JWKS (override with `issuer`).
+
+### Security
+
+- Removed the fallback that verified a token against the agent's own registered public key when its `kid` was not in the registry JWKS. Any registered agent could sign its own claims. Only registry JWKS keys (or a caller-supplied `getKey`) verify tokens now.
+- A token that names a `kid` verifies only against that `kid`, even when the JWKS holds a single key.
 
 This verifier does not check a DPoP proof on resource-server requests (`DPoP` header, `htm`/`htu`/`ath`).
 

@@ -4,7 +4,6 @@ import { TtlCache } from "./cache.js";
 import { AgentIdError } from "./errors.js";
 import {
   agentLookupUrl,
-  agentPublicKeyUrl,
   agentStatusUrl,
 } from "./registry.js";
 import {
@@ -104,11 +103,9 @@ function asJwkSet(body: unknown): JWK[] {
   return [];
 }
 
+/** A token that names a kid only ever verifies against that kid. */
 function findKey(keys: JWK[], kid?: string): JWK | undefined {
-  if (kid) {
-    const match = keys.find((key) => key.kid === kid);
-    if (match) return match;
-  }
+  if (kid) return keys.find((key) => key.kid === kid);
   return keys.length === 1 ? keys[0] : undefined;
 }
 
@@ -127,7 +124,6 @@ interface FetchedJson {
 
 export class RegistryKeySource {
   private readonly jwksCache = new TtlCache<JWK[]>();
-  private readonly keyCache = new TtlCache<JWK>();
   private readonly statusCache = new TtlCache<string>();
   private readonly ownerCache = new TtlCache<Record<string, unknown>>();
 
@@ -163,32 +159,6 @@ export class RegistryKeySource {
       key = findKey(refreshed, header.kid);
     }
     return key;
-  }
-
-  async getAgentPublicKey(
-    registryUrl: string,
-    agentId: string,
-    expSeconds?: number,
-    now = Date.now(),
-  ): Promise<JWK | undefined> {
-    const cacheKey = `agent-key:${registryUrl}:${agentId}`;
-    const cached = this.keyCache.get(cacheKey, now);
-    if (cached) return cached;
-
-    const fetched = await this.getJson(agentPublicKeyUrl(registryUrl, agentId));
-    if (!fetched) return undefined;
-    if (this.isErrorBody(fetched.body)) {
-      this.throwStatusError(fetched.body);
-    }
-    const keys = asJwkSet(fetched.body);
-    const jwk = keys[0];
-    if (!jwk) return undefined;
-    const ttl = Math.min(
-      this.ttlMs(now, expSeconds, this.ttlSeconds),
-      cacheTtlMs(this.ttlSeconds, fetched.cacheControl),
-    );
-    if (ttl > 0) this.keyCache.set(cacheKey, jwk, ttl, now);
-    return jwk;
   }
 
   async getAgentStatus(
@@ -344,9 +314,7 @@ export async function resolveVerifyKey(input: {
   payload: JwtPayload;
   getKey?: (header: JwtHeader, payload: JwtPayload) => Promise<KeyMaterial | undefined> | KeyMaterial | undefined;
   source: RegistryKeySource;
-  registryUrl: string;
   jwksUri: string;
-  expSeconds?: number;
   now?: number;
 }): Promise<CryptoKey | Uint8Array> {
   if (input.getKey) {
@@ -363,22 +331,8 @@ export async function resolveVerifyKey(input: {
   );
   if (fromJwks) return materializeKey(fromJwks);
 
-  const agentId =
-    typeof input.payload.agent_id === "string"
-      ? input.payload.agent_id
-      : typeof input.payload.sub === "string"
-        ? input.payload.sub
-        : undefined;
-
-  if (agentId) {
-    const agentKey = await input.source.getAgentPublicKey(
-      input.registryUrl,
-      agentId,
-      input.expSeconds,
-      now,
-    );
-    if (agentKey) return materializeKey(agentKey);
-  }
-
+  // Only the registry's own keys are trusted. An agent's registered key
+  // proves possession (cnf.jkt); it must never verify a registry token, or
+  // any agent could sign its own claims.
   throw new AgentIdError("AID-001", "signing key not found");
 }

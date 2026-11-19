@@ -161,11 +161,14 @@ export async function verifyAgentToken(
   if (requireAudience && unverified.aud == null) {
     throw new AgentIdError("AID-011", "aud claim is required");
   }
-  if (
-    requireAudience &&
-    options.audience != null &&
-    !audienceAllowed(unverified.aud, options.audience)
-  ) {
+  // Without this, a token minted for another service would be accepted here.
+  if (requireAudience && !audiencesOf(options.audience)?.length) {
+    throw new AgentIdError(
+      "AID-011",
+      "verifier is misconfigured: set the audience option to this service's URL",
+    );
+  }
+  if (requireAudience && !audienceAllowed(unverified.aud, options.audience)) {
     throw new AgentIdError("AID-001", "audience mismatch");
   }
 
@@ -179,9 +182,7 @@ export async function verifyAgentToken(
     payload: unverified,
     getKey: options.getKey,
     source,
-    registryUrl,
     jwksUri,
-    expSeconds: exp,
     now: nowMs,
   });
 
@@ -189,6 +190,9 @@ export async function verifyAgentToken(
   try {
     const verified = await jwtVerify(token, key, {
       algorithms: ["ES256"],
+      requiredClaims: ["exp"],
+      // A custom getKey is the caller's own trust decision.
+      issuer: options.issuer ?? (options.getKey ? undefined : registryUrl),
       currentDate: now,
       clockTolerance: tolerance,
       typ:
