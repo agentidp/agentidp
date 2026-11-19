@@ -18,6 +18,7 @@ export {
 export { hopNarrows, isSubset } from "./policy.js";
 export {
   createProofJwt,
+  publicKeyAudience,
   tokenExchangeAudience,
   tokenExchangeAudiences,
 } from "./proof.js";

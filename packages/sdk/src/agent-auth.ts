@@ -3,7 +3,7 @@ import { SignJWT, type JWTPayload } from "jose";
 
 import { exchangeToken, registerAgentPublicKey } from "./exchange.js";
 import { assertPublicJwk, importPrivateKey, toPublicJwk } from "./keys.js";
-import { createProofJwt } from "./proof.js";
+import { createProofJwt, publicKeyAudience } from "./proof.js";
 import {
   AIT_TYP,
   DEFAULT_REGISTRY_URL,
@@ -14,6 +14,7 @@ import {
   type FetchLike,
   type GetTokenOptions,
   type TokenExchangeResponse,
+  type PrivateKeyInput,
 } from "./types.js";
 
 function envRegistryUrl(): string | undefined {
@@ -126,7 +127,13 @@ export class AgentAuth {
     });
   }
 
-  async registerPublicKey(): Promise<void> {
+  /**
+   * Register this agent's public JWK. To replace a key already on file,
+   * pass the key being replaced: the registry needs a proof signed by it.
+   */
+  async registerPublicKey(options?: {
+    currentPrivateKey?: PrivateKeyInput;
+  }): Promise<void> {
     if (!this.apiKey) {
       throw new Error("apiKey is required to register a public JWK");
     }
@@ -141,6 +148,14 @@ export class AgentAuth {
       publicKey: assertPublicJwk(toPublicJwk(imported.jwk)),
       apiKey: this.apiKey,
       registryUrl: this.registryUrl,
+      proof: options?.currentPrivateKey
+        ? await createProofJwt({
+            agentId: this.agentId,
+            privateKey: options.currentPrivateKey,
+            registryUrl: this.registryUrl,
+            audience: publicKeyAudience(this.registryUrl, this.agentId),
+          })
+        : undefined,
       fetch: this.fetchImpl,
     });
   }

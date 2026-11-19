@@ -26,6 +26,11 @@ export function tokenExchangeAudience(registryUrl: string): string {
   return tokenExchangeAudiences(registryUrl)[0]!;
 }
 
+/** `aud` of the proof that authorises replacing an agent's registered key. */
+export function publicKeyAudience(registryUrl: string, agentId: string): string {
+  return `${stripTrailingSlash(registryUrl)}/api/v1/agents/${encodeURIComponent(agentId)}/public-key`;
+}
+
 export function generateProofJti(): string {
   return `pop_${randomBytes(16).toString("hex")}`;
 }
@@ -67,7 +72,9 @@ export async function createProofJwt(
     .setProtectedHeader(header)
     .setIssuer(options.agentId)
     .setSubject(options.agentId)
-    .setAudience(tokenExchangeAudience(options.registryUrl))
+    .setAudience(
+      options.audience ?? tokenExchangeAudience(options.registryUrl),
+    )
     .setIssuedAt(now)
     .setExpirationTime(now + Math.trunc(lifetime))
     .setJti(jti)

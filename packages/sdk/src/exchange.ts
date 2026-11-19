@@ -126,6 +126,12 @@ export async function registerAgentPublicKey(input: {
   publicKey: unknown;
   apiKey: string;
   registryUrl: string;
+  /**
+   * Required by the registry when an API key replaces an existing key: a
+   * proof JWT signed by the agent's current private key with
+   * `aud` = `publicKeyAudience(registryUrl, agentId)`.
+   */
+  proof?: string;
   fetch?: FetchLike;
 }): Promise<void> {
   const url = `${input.registryUrl.replace(/\/+$/, "")}/api/v1/agents/${encodeURIComponent(input.agentId)}/public-key`;
@@ -136,7 +142,10 @@ export async function registerAgentPublicKey(input: {
       Authorization: `Bearer ${input.apiKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ public_key: input.publicKey }),
+    body: JSON.stringify({
+      public_key: input.publicKey,
+      ...(input.proof ? { proof: input.proof } : {}),
+    }),
   });
   if (response.ok) return;
 

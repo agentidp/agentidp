@@ -142,4 +142,30 @@ describe("AgentAuth", () => {
       else process.env.AGENTIDP_REGISTRY_URL = previous;
     }
   });
+
+  it("sends a proof signed by the current key when rotating", async () => {
+    const current = await generateAgentKey("old-kid");
+    const next = await generateAgentKey("new-kid");
+    let sent: { public_key: { kid: string }; proof: string } | undefined;
+    const auth = new AgentAuth({
+      agentId: "ag_rotate",
+      privateKey: next.privateJwk,
+      apiKey: "aidp_test_key",
+      registryUrl: "https://registry.test",
+      fetch: async (_url, init) => {
+        sent = JSON.parse(String(init?.body));
+        return { ok: true, status: 200, json: async () => ({}) };
+      },
+    });
+
+    await auth.registerPublicKey({ currentPrivateKey: current.privateJwk });
+
+    expect(sent?.public_key.kid).toBe("new-kid");
+    const { payload } = await jwtVerify(
+      sent!.proof,
+      await importJWK(current.publicJwk, "ES256"),
+      { audience: "https://registry.test/api/v1/agents/ag_rotate/public-key" },
+    );
+    expect(payload.iss).toBe("ag_rotate");
+  });
 });

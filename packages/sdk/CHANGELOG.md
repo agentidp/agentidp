@@ -11,6 +11,7 @@ Lockstep npm cut with `@agentidp/verify`. Implements spec v0.2 and the registry 
 
 ### Added
 
+- Key rotation proof: `registerPublicKey({ currentPrivateKey })` and `registerAgentPublicKey({ proof })` send the proof the registry now requires to replace an existing key with an API key. `publicKeyAudience` and a `createProofJwt` `audience` option build it.
 - Agent-held key: `generateAgentKeyPair` (ES256 or EdDSA). Register only the public JWK (`assertPublicJwk`, `toPublicJwk`).
 - Proof JWT: `createProofJwt` / `AgentAuth.createProofJwt` (`iss`/`sub` = agent id, `aud` = the token endpoint, max 5 minutes).
 - Token exchange: `exchangeToken` / `AgentAuth.exchangeToken` for `POST /api/v1/tokens/exchange`.

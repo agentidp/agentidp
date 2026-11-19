@@ -99,6 +99,8 @@ export interface CreateProofJwtOptions {
   lifetimeSeconds?: number;
   now?: number;
   keyId?: string;
+  /** Defaults to the token exchange endpoint. */
+  audience?: string;
 }
 
 export interface TokenExchangeRequest {
