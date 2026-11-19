@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import {
+  chmod,
   lstat,
   mkdir,
   open,
@@ -38,6 +39,7 @@ async function ensureKeyDir(keyDir: string): Promise<string> {
   if ((await lstat(dir)).isSymbolicLink()) {
     throw new Error(`Key directory ${dir} is a symbolic link; refusing to use it`);
   }
+  await chmod(dir, 0o700);
   // Keep keys out of version control, replacing any .gitignore a repo
   // shipped here. rm does not follow a symlink; wx then creates a new file.
   const ignore = join(dir, ".gitignore");

@@ -15,6 +15,9 @@ import {
 } from "@agentidp/verify";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 import { z } from "zod";
 
 import {
@@ -26,7 +29,8 @@ import {
 
 export const SERVER_NAME = "agentidp";
 export const SERVER_VERSION = "0.1.0";
-export const DEFAULT_KEY_DIR = ".agentidp";
+// Per-user, outside any project: a cloned repo cannot pre-plant or capture keys.
+export const DEFAULT_KEY_DIR = join(homedir(), ".agentidp", "keys");
 
 export type FetchLike = (
   input: string,
@@ -43,7 +47,7 @@ export interface AgentIdpMcpOptions {
   apiKey?: string;
   /** Registry origin. Default: https://registry.agentidp.dev */
   registryUrl?: string;
-  /** Directory for agent private key files. Default: `.agentidp` in the working directory. */
+  /** Directory for agent private key files. Default: `~/.agentidp/keys`. */
   keyDir?: string;
   fetch?: FetchLike;
 }
@@ -277,12 +281,6 @@ export function createAgentIdpServer(options: AgentIdpMcpOptions = {}) {
         "Replace an agent's key pair. Generates a new pair locally, proves control of the current key to the registry, registers the new public key, and saves the new private key to the agent's key file (the old file is kept beside it with a .replaced suffix). Needs an owner API key allowed to change agent keys.",
       inputSchema: {
         agent_id: agentIdInput,
-        private_key_path: z
-          .string()
-          .optional()
-          .describe(
-            "Path of the agent's current private key file. Default: the file register_agent wrote.",
-          ),
         alg: z.enum(["ES256", "EdDSA"]).optional().describe("Default ES256"),
       },
       annotations: {
@@ -291,11 +289,11 @@ export function createAgentIdpServer(options: AgentIdpMcpOptions = {}) {
         openWorldHint: true,
       },
     },
-    async ({ agent_id, private_key_path, alg }) => {
+    async ({ agent_id, alg }) => {
       try {
         const key = requireApiKey();
         const current = await readPrivateKey(
-          private_key_path ?? keyPath(keyDir, agent_id),
+          keyPath(keyDir, agent_id),
         );
         const next = await generateAgentKeyPair({ alg });
         const staged = await stagePrivateKey(keyDir, next.privateJwk);
@@ -333,7 +331,7 @@ export function createAgentIdpServer(options: AgentIdpMcpOptions = {}) {
     {
       title: "Mint an Agent Identity Token",
       description:
-        "Exchange an agent's proof for a short-lived token addressed to one service. Reads the agent's private key from its local key file to sign the proof. Returns the token, a bearer credential: use it, do not store it. Needs an owner API key allowed to exchange tokens.",
+        "Exchange an agent's proof for a short-lived token addressed to one service. Signs the proof with the agent's private key from the server's key directory; callers cannot point it at another file. Returns the token, a bearer credential: use it, do not store it. Needs an owner API key allowed to exchange tokens.",
       inputSchema: {
         agent_id: agentIdInput,
         audience: z
@@ -351,21 +349,15 @@ export function createAgentIdpServer(options: AgentIdpMcpOptions = {}) {
           .max(86400)
           .optional()
           .describe("Default 3600, at most 86400"),
-        private_key_path: z
-          .string()
-          .optional()
-          .describe(
-            "Path of the agent's private key file. Default: the file register_agent wrote.",
-          ),
       },
       annotations: { readOnlyHint: false, openWorldHint: true },
     },
-    async ({ agent_id, audience, scopes, lifetime_seconds, private_key_path }) => {
+    async ({ agent_id, audience, scopes, lifetime_seconds }) => {
       try {
         const auth = new AgentAuth({
           agentId: agent_id,
           privateKey: await readPrivateKey(
-            private_key_path ?? keyPath(keyDir, agent_id),
+            keyPath(keyDir, agent_id),
           ),
           apiKey: requireApiKey(),
           registryUrl,

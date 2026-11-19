@@ -22,8 +22,8 @@ Errors keep the registry's own code in front (`AID-011: …`), so a caller can b
 An agent's private key is never returned by a tool, so it does not enter the model's conversation or your chat history.
 
 - `register_agent` and `rotate_agent_key` write the private JWK to `<key dir>/<agent_id>.private.jwk.json`, readable by your user only (mode `0600`), and return the path.
-- The key directory is `.agentidp` in the directory the server starts in. Change it with `AGENTIDP_KEY_DIR`. The server puts a `.gitignore` containing `*` inside it.
-- `mint_token` and `rotate_agent_key` read the key from that file. Pass `private_key_path` if you keep it elsewhere.
+- The key directory is `~/.agentidp/keys`, outside any project, so a cloned repository cannot plant or capture keys. Change it with `AGENTIDP_KEY_DIR`. The server sets the directory to owner-only, refuses a symlinked directory, and keeps a `.gitignore` containing `*` inside it.
+- `mint_token` and `rotate_agent_key` read the key from that directory only. A caller cannot point them at another file.
 - After a rotation the old key file is kept beside the new one with a `.replaced-<timestamp>` suffix. Delete it once you are sure the new key works.
 - Only the public half is ever sent to the registry.
 
@@ -35,7 +35,7 @@ An agent's private key is never returned by a tool, so it does not enter the mod
 | --- | --- | --- |
 | `AGENTIDP_API_KEY` | for the three write tools | Owner API key (`aidp_…`), created in the registry dashboard. Give it only the permissions the job needs: a key limited to token exchange can mint but cannot create agents or change keys |
 | `AGENTIDP_REGISTRY_URL` | no | Default `https://registry.agentidp.dev` |
-| `AGENTIDP_KEY_DIR` | no | Default `.agentidp` in the working directory |
+| `AGENTIDP_KEY_DIR` | no | Default `~/.agentidp/keys` |
 
 Keep the API key out of files you commit. Where a client supports it, reference an environment variable instead of pasting the key.
 
@@ -172,4 +172,4 @@ const server = createAgentIdpServer({ apiKey: process.env.AGENTIDP_API_KEY });
 
 - Stdio only. There is no hosted or HTTP endpoint.
 - The server trusts whoever can call its tools with your API key. Scope the key.
-- `private_key_path` is read from wherever the caller points. The file's contents are never returned or echoed in errors, only used to sign.
+- To use a key created elsewhere, place it in the key directory as `<agent_id>.private.jwk.json`.
