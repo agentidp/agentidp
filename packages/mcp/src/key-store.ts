@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import {
+  lstat,
   mkdir,
   open,
   readFile,
@@ -32,12 +33,16 @@ export function keyPath(keyDir: string, agentId: string): string {
 async function ensureKeyDir(keyDir: string): Promise<string> {
   const dir = resolve(keyDir);
   await mkdir(dir, { recursive: true, mode: 0o700 });
-  // Keep the directory out of version control wherever it is created.
-  await writeFile(join(dir, ".gitignore"), "*\n", { flag: "wx" }).catch(
-    (error: NodeJS.ErrnoException) => {
-      if (error.code !== "EEXIST") throw error;
-    },
-  );
+  // The default directory sits in the working tree, which may be a cloned
+  // repo. Refuse a planted symlink that would send keys somewhere else.
+  if ((await lstat(dir)).isSymbolicLink()) {
+    throw new Error(`Key directory ${dir} is a symbolic link; refusing to use it`);
+  }
+  // Keep keys out of version control, replacing any .gitignore a repo
+  // shipped here. rm does not follow a symlink; wx then creates a new file.
+  const ignore = join(dir, ".gitignore");
+  await rm(ignore, { force: true });
+  await writeFile(ignore, "*\n", { flag: "wx" });
   return dir;
 }
 

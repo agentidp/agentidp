@@ -1,4 +1,12 @@
-import { mkdtemp, readFile, readdir, rm, stat } from "node:fs/promises";
+import {
+  mkdtemp,
+  readFile,
+  readdir,
+  rm,
+  stat,
+  symlink,
+  writeFile,
+} from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 
@@ -277,6 +285,34 @@ describe("AgentIDP MCP server", () => {
     const files = await keyFiles();
     expect(files).toHaveLength(2);
     expect(files.some((name) => name.includes(".replaced-"))).toBe(true);
+  });
+
+  it("replaces a planted .gitignore and refuses a symlinked key directory", async () => {
+    const registry = await mockRegistry();
+    await writeFile(join(keyDir, ".gitignore"), "!*\n");
+    const first = await connect({ apiKey: API_KEY, fetch: registry.fetch });
+    await first.call("register_agent", { name: "Booking" });
+    expect(await readFile(join(keyDir, ".gitignore"), "utf8")).toBe("*\n");
+
+    const elsewhere = await mkdtemp(join(tmpdir(), "agentidp-elsewhere-"));
+    const link = join(keyDir, "link");
+    await symlink(elsewhere, link);
+    const server = createAgentIdpServer({
+      registryUrl: REGISTRY,
+      keyDir: link,
+      apiKey: API_KEY,
+      fetch: registry.fetch,
+    });
+    const [clientSide, serverSide] = InMemoryTransport.createLinkedPair();
+    const client = new Client({ name: "test", version: "0.0.0" });
+    await Promise.all([server.connect(serverSide), client.connect(clientSide)]);
+    const result = await client.callTool({
+      name: "register_agent",
+      arguments: { name: "Booking" },
+    });
+    expect(result.isError).toBe(true);
+    expect(await readdir(elsewhere)).toEqual([]);
+    await rm(elsewhere, { recursive: true, force: true });
   });
 
   it("rejects agent ids that could escape the key directory", async () => {
