@@ -316,10 +316,12 @@ export async function resolveVerifyKey(input: {
   source: RegistryKeySource;
   jwksUri: string;
   now?: number;
-}): Promise<CryptoKey | Uint8Array> {
+}): Promise<{ key: CryptoKey | Uint8Array; fromRegistry: boolean }> {
   if (input.getKey) {
     const provided = await input.getKey(input.header, input.payload);
-    if (provided) return materializeKey(provided);
+    if (provided) {
+      return { key: await materializeKey(provided), fromRegistry: false };
+    }
   }
 
   const now = input.now ?? Date.now();
@@ -329,7 +331,9 @@ export async function resolveVerifyKey(input: {
     false,
     now,
   );
-  if (fromJwks) return materializeKey(fromJwks);
+  if (fromJwks) {
+    return { key: await materializeKey(fromJwks), fromRegistry: true };
+  }
 
   // Only the registry's own keys are trusted. An agent's registered key
   // proves possession (cnf.jkt); it must never verify a registry token, or

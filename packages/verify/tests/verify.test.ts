@@ -259,6 +259,27 @@ describe("verifyAgentToken", () => {
     ).rejects.toMatchObject({ code: "AID-011" });
   });
 
+  it("checks the issuer when getKey returns nothing and the JWKS is used", async () => {
+    const pair = await generatePair("jwks-kid");
+    const token = await signAit(
+      pair.privateKey,
+      { agent_id: "ag_iss2", aud: "https://api.example.com", iss: "https://evil.test" },
+      pair.kid,
+    );
+    await expect(
+      verifyAgentToken(token, {
+        audience: "https://api.example.com",
+        getKey: () => undefined,
+        registryUrl: "https://registry.test",
+        fetch: jsonFetch({
+          "https://registry.test/.well-known/jwks.json": {
+            body: { keys: [pair.publicJwk] },
+          },
+        }),
+      }),
+    ).rejects.toMatchObject({ code: "AID-001" });
+  });
+
   it("rejects a registry-signed token with the wrong issuer", async () => {
     const pair = await generatePair("jwks-kid");
     const token = await signAit(

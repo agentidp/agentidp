@@ -177,7 +177,7 @@ export async function verifyAgentToken(
   const source = sourceFor(options);
   const nowMs = now.getTime();
 
-  const key = await resolveVerifyKey({
+  const { key, fromRegistry } = await resolveVerifyKey({
     header,
     payload: unverified,
     getKey: options.getKey,
@@ -191,8 +191,9 @@ export async function verifyAgentToken(
     const verified = await jwtVerify(token, key, {
       algorithms: ["ES256"],
       requiredClaims: ["exp"],
-      // A custom getKey is the caller's own trust decision.
-      issuer: options.issuer ?? (options.getKey ? undefined : registryUrl),
+      // A key the caller supplied is their own trust decision; a registry
+      // key only ever speaks for the registry.
+      issuer: options.issuer ?? (fromRegistry ? registryUrl : undefined),
       currentDate: now,
       clockTolerance: tolerance,
       typ:

@@ -86,8 +86,8 @@ export interface VerifyAgentTokenOptions {
    */
   audience?: string | string[];
   /**
-   * Expected `iss`. Defaults to `registryUrl` when keys come from the
-   * registry JWKS, and is not checked with a custom `getKey` unless set.
+   * Expected `iss`. Defaults to `registryUrl` when the key came from the
+   * registry JWKS, and is not checked for a key `getKey` returned unless set.
    */
   issuer?: string | string[];
   /**
