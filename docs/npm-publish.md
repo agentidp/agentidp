@@ -1,12 +1,12 @@
 # npm publish checklist
 
-`@agentidp/sdk` and `@agentidp/verify` **0.2.0** are prepared for a public npm release. Do not publish until Tim (AgentIDP) writes an explicit yes.
+`@agentidp/sdk` and `@agentidp/verify` **0.2.1** and `@agentidp/mcp` **0.1.0** are prepared for a public npm release. Do not publish until Tim (AgentIDP) writes an explicit yes.
 
 This file is a human checklist. Do not run `npm publish` or `pnpm publish` from CI or an agent session unless that approval is on record. Do not put OTP codes, npm tokens, or `.npmrc` auth lines in git, CI logs, or chat.
 
 ## Versions
 
-Both packages are **0.2.0** (lockstep). They implement spec v0.2 and the registry `/api/v1/` contract. JWT `typ` strings stay `AIT+jwt`, `AIT-POP+jwt`, and `AIT-DLG+jwt`. Both are `"type": "module"`; from CommonJS use `const { AgentAuth } = await import("@agentidp/sdk")`.
+`@agentidp/sdk` and `@agentidp/verify` are **0.2.1** (lockstep); 0.2.0 is on npm and was cut before the rotation proof (sdk) and the issuer and key-fallback fixes (verify). `@agentidp/mcp` is **0.1.0**, its first release, and depends on both. They implement spec v0.2 and the registry `/api/v1/` contract. JWT `typ` strings stay `AIT+jwt`, `AIT-POP+jwt`, and `AIT-DLG+jwt`. Both are `"type": "module"`; from CommonJS use `const { AgentAuth } = await import("@agentidp/sdk")`.
 
 The RFC file in-tree is still `spec/AGENTID-RFC-v0.1.0.md`. Do not publish `0.1.0`; that workspace cut was never released.
 
@@ -15,12 +15,12 @@ Tarball contents are enforced by `pnpm test:pack` and the `pack.test.ts` files: 
 ## Preconditions
 
 - [ ] Written approval from Tim to publish
-- [ ] This 0.2.0 readiness change is on `main`
+- [ ] This release change is on `main`
 - [ ] You own or have publish rights on the `@agentidp` npm org (`npm org ls agentidp`)
 - [ ] 2FA is enabled on the npm account that will publish
 - [ ] You are logged in as that account (`npm whoami`)
 - [ ] `pnpm install && pnpm build && pnpm typecheck && pnpm test && pnpm test:pack` is green
-- [ ] Each package `package.json` has `"version": "0.2.0"` and no `"private": true`
+- [ ] `sdk` and `verify` have `"version": "0.2.1"`, `mcp` has `"version": "0.1.0"`, and none has `"private": true`
 - [ ] Each package has `"publishConfig": { "access": "public" }`
 - [ ] No `.npmrc` with tokens is committed
 
@@ -43,7 +43,10 @@ From a clean checkout of `main`, with 2FA available. Publish with provenance so 
 ```bash
 pnpm --filter @agentidp/sdk publish --access public --provenance
 pnpm --filter @agentidp/verify publish --access public --provenance
+pnpm --filter @agentidp/mcp publish --access public --provenance
 ```
+
+Publish `mcp` last and with `pnpm`, not `npm`: `pnpm publish` rewrites its `workspace:^` dependencies to the `sdk` and `verify` versions just published; `npm publish` would ship them unresolved.
 
 Or, from each package directory after `pnpm build`:
 
@@ -57,8 +60,9 @@ Do not put OTP codes, npm tokens, or `.npmrc` auth lines in git, CI logs, or cha
 
 ## After publish
 
-- `npm view @agentidp/sdk version` and `npm view @agentidp/verify version` should show `0.2.0`
-- Optional git tags: `sdk-v0.2.0` and `verify-v0.2.0`
+- `npm view @agentidp/sdk version` and `npm view @agentidp/verify version` should show `0.2.1`, and `npm view @agentidp/mcp version` `0.1.0`
+- `npx -y @agentidp/mcp` should start and wait on stdin
+- Optional git tags: `sdk-v0.2.1`, `verify-v0.2.1` and `mcp-v0.1.0`
 - Update site copy if it still says the packages are unpublished or still lists `0.1.0`
 
 ## What this repo must not do

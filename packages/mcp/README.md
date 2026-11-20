@@ -2,8 +2,6 @@
 
 MCP server for the AgentIDP registry. It lets a coding agent look up and verify agent identities, register an agent, rotate its key and mint tokens, without leaving the editor.
 
-Not yet published to npm. Until a maintainer publishes it, build it from this workspace (`pnpm install && pnpm build`) and point your client at `node /path/to/agentidp/packages/mcp/dist/cli.js` instead of `npx -y @agentidp/mcp`.
-
 ## Tools
 
 | Tool | Needs an API key | What it does |

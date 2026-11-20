@@ -5,13 +5,18 @@ All notable changes to `@agentidp/sdk` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-11-20
+
+### Added
+
+- Key rotation proof: `registerPublicKey({ currentPrivateKey })` and `registerAgentPublicKey({ proof })` send the proof the registry requires to replace an existing key with an API key. `publicKeyAudience` and a `createProofJwt` `audience` option build it. This was listed under 0.2.0 but landed after that version was published.
+
 ## [0.2.0] - 2026-11-18
 
 Lockstep npm cut with `@agentidp/verify`. Implements spec v0.2 and the registry `/api/v1/` contract. JWT `typ` strings stay `AIT+jwt` (minted AgentIDP token), `AIT-POP+jwt` (proof), and `AIT-DLG+jwt` (delegation hop). 0.1.0 was never published.
 
 ### Added
 
-- Key rotation proof: `registerPublicKey({ currentPrivateKey })` and `registerAgentPublicKey({ proof })` send the proof the registry now requires to replace an existing key with an API key. `publicKeyAudience` and a `createProofJwt` `audience` option build it.
 - Agent-held key: `generateAgentKeyPair` (ES256 or EdDSA). Register only the public JWK (`assertPublicJwk`, `toPublicJwk`).
 - Proof JWT: `createProofJwt` / `AgentAuth.createProofJwt` (`iss`/`sub` = agent id, `aud` = the token endpoint, max 5 minutes).
 - Token exchange: `exchangeToken` / `AgentAuth.exchangeToken` for `POST /api/v1/tokens/exchange`.
