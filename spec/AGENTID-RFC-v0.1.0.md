@@ -260,6 +260,23 @@ Services define policies as a set of rules evaluated against AgentIDP token clai
 }
 ```
 
+#### 3.4.3 Discovery challenge
+
+When a service refuses a request with HTTP 401 because the AgentIDP token is missing or invalid, it SHOULD send a `WWW-Authenticate` challenge in the form of [RFC 6750](https://www.rfc-editor.org/rfc/rfc6750.html) Section 3, so an agent, or its owner, can find out where to get a token:
+
+```http
+WWW-Authenticate: Bearer realm="agentidp", registry="https://registry.agentidp.dev", audience="https://api.example.com"
+```
+
+| Parameter | Meaning |
+|-----------|---------|
+| `realm` | `agentidp`. Tells an AgentIDP-aware agent this service accepts AgentIDP tokens. |
+| `registry` | Origin of the registry whose tokens the service accepts. An agent exchanges a proof there (Section 3.6). Omitted when the service does not take keys from a registry. |
+| `audience` | The value the agent MUST request as `aud`. |
+| `error`, `error_description` | `invalid_token` and a description when a token was sent and refused. Omitted when no token was sent. |
+
+A 403 (level too low, missing capability, revoked) does not carry this challenge: a new token from the same agent would not help.
+
 ### 3.5 Delegation Chain
 
 When Agent A instructs Agent B to perform an action, the delegation chain is presented at token exchange as signed compact JWS hops and MAY be copied onto the minted AgentIDP token so the receiving service can inspect provenance.

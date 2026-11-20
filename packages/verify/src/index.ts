@@ -1,4 +1,4 @@
-export { agentIdMiddleware } from "./middleware.js";
+export { agentIdChallenge, agentIdMiddleware } from "./middleware.js";
 export { verifyAgentToken } from "./verify.js";
 export { AgentIdError, ERRORS, isAgentIdError } from "./errors.js";
 export { parseVerificationLevel } from "./levels.js";

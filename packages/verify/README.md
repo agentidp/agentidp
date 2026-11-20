@@ -49,6 +49,28 @@ app.post(
 
 On success the middleware sets `req.agent`. `owner_name` is not required. If a leftover token still carries it, it is copied through; lookup uses `verified_domain` (Level 2+) as the protocol display field.
 
+### Discovery header
+
+When the middleware answers 401 (no token, or a token it refuses), it also sends a `WWW-Authenticate` header telling the agent where to get a token and which audience to ask for:
+
+```http
+WWW-Authenticate: Bearer realm="agentidp", registry="https://registry.agentidp.dev", audience="https://api.example.com"
+```
+
+A refused token adds `error="invalid_token"` and `error_description`. 403 responses carry no challenge. Outside the middleware, build the same value with `agentIdChallenge(options, error?)`:
+
+```ts
+import { agentIdChallenge, isAgentIdError, verifyAgentToken } from "@agentidp/verify";
+
+try {
+  const agent = await verifyAgentToken(token, options);
+} catch (error) {
+  if (isAgentIdError(error) && error.status === 401) {
+    response.headers.set("WWW-Authenticate", agentIdChallenge(options, token ? error : undefined));
+  }
+}
+```
+
 ## Registry contract
 
 Default issuer: `https://registry.agentidp.dev` via `AGENTIDP_REGISTRY_URL` or `registryUrl`.
