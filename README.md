@@ -17,7 +17,7 @@ This repository holds the protocol text and the TypeScript packages the site doc
 | Package | Path | Version | Role |
 | --- | --- | --- | --- |
 | [`@agentidp/sdk`](packages/sdk) | `packages/sdk` | `0.2.1` | Agent-side: generate a key, build a proof JWT, call token exchange |
-| [`@agentidp/verify`](packages/verify) | `packages/verify` | `0.2.1` | Service-side: verify an AgentIDP token and protect an HTTP route |
+| [`@agentidp/verify`](packages/verify) | `packages/verify` | `0.3.0` | Service-side: verify an AgentIDP token and protect an HTTP route |
 | [`@agentidp/mcp`](packages/mcp) | `packages/mcp` | `0.1.0` | MCP server: look up, verify, register and mint from a coding agent |
 
 All three are published on npm under the `@agentidp` scope. Releases follow [docs/npm-publish.md](docs/npm-publish.md).

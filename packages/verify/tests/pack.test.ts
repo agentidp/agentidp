@@ -19,7 +19,7 @@ describe("npm tarball", () => {
     const packed = packAndInspect(packageDir);
     tmps.push(packed.tmp);
     assertCleanPack(packed);
-    expect(packed.packageJson.version).toBe("0.2.1");
+    expect(packed.packageJson.version).toBe("0.3.0");
     expect(packed.packageJson.engines.node).toBe(">=18");
     expect(packed.packageJson.types).toBe("./dist/index.d.ts");
     expect(packed.packageJson.exports["."].import).toBe("./dist/index.js");
