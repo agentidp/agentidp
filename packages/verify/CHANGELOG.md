@@ -5,6 +5,13 @@ All notable changes to `@agentidp/verify` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- 401 responses from `agentIdMiddleware` carry a `WWW-Authenticate: Bearer realm="agentidp", registry="…", audience="…"` challenge (spec §3.4.3), so an agent without a token can find where to get one. A refused token adds `error="invalid_token"`.
+- `agentIdChallenge(options, error?)` builds the same header for code that calls `verifyAgentToken` directly.
+
 ## [0.2.1] - 2026-11-20
 
 Upgrade from 0.2.0: that version accepts tokens it should refuse. These changes were listed under 0.2.0 but landed after it was published.
