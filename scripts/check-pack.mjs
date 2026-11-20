@@ -37,7 +37,7 @@ for (const item of packages) {
     assertCleanPack(result);
     const pkg = result.packageJson;
     const exported = pkg.exports?.["."];
-    expectEqual(`${item.name} version`, pkg.version, "0.2.0");
+    expectEqual(`${item.name} version`, pkg.version, "0.2.1");
     expectEqual(`${item.name} type`, pkg.type, "module");
     expectEqual(`${item.name} engines.node`, pkg.engines?.node, ">=18");
     expectEqual(`${item.name} types`, pkg.types, "./dist/index.d.ts");

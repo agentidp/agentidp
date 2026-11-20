@@ -5,6 +5,19 @@ All notable changes to `@agentidp/verify` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2026-11-20
+
+Upgrade from 0.2.0: that version accepts tokens it should refuse. These changes were listed under 0.2.0 but landed after it was published.
+
+### Breaking
+
+- `exp` is required. `iss` must equal `registryUrl` when keys come from the registry JWKS (override with `issuer`).
+
+### Security
+
+- Removed the fallback that verified a token against the agent's own registered public key when its `kid` was not in the registry JWKS. Any registered agent could sign its own claims. Only registry JWKS keys (or a caller-supplied `getKey`) verify tokens now.
+- A token that names a `kid` verifies only against that `kid`, even when the JWKS holds a single key.
+
 ## [0.2.0] - 2026-11-18
 
 Lockstep npm cut with `@agentidp/sdk`. Implements spec v0.2 and the registry `/api/v1/` contract. JWT `typ` stays `AIT+jwt`. Verifiers also accept `agentidp+jwt` as an alias. 0.1.0 was never published.
@@ -18,12 +31,6 @@ Lockstep npm cut with `@agentidp/sdk`. Implements spec v0.2 and the registry `/a
 
 - Tokens without `aud` fail unless `requireAudience: false`.
 - The `audience` option is required. Without it verification fails with `AID-011`, unless `requireAudience: false`.
-- `exp` is required. `iss` must equal `registryUrl` when keys come from the registry JWKS (override with `issuer`).
-
-### Security
-
-- Removed the fallback that verified a token against the agent's own registered public key when its `kid` was not in the registry JWKS. Any registered agent could sign its own claims. Only registry JWKS keys (or a caller-supplied `getKey`) verify tokens now.
-- A token that names a `kid` verifies only against that `kid`, even when the JWKS holds a single key.
 
 This verifier does not check a DPoP proof on resource-server requests (`DPoP` header, `htm`/`htu`/`ath`).
 
