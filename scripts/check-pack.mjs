@@ -14,8 +14,8 @@ const root = dirname(dirname(fileURLToPath(import.meta.url)));
 const require = createRequire(import.meta.url);
 
 const packages = [
-  { name: "@agentidp/sdk", dir: join(root, "packages/sdk") },
-  { name: "@agentidp/verify", dir: join(root, "packages/verify") },
+  { name: "@agentidp/sdk", dir: join(root, "packages/sdk"), version: "0.2.1" },
+  { name: "@agentidp/verify", dir: join(root, "packages/verify"), version: "0.3.0" },
 ];
 
 function expectEqual(label, value, expected) {
@@ -37,7 +37,7 @@ for (const item of packages) {
     assertCleanPack(result);
     const pkg = result.packageJson;
     const exported = pkg.exports?.["."];
-    expectEqual(`${item.name} version`, pkg.version, "0.2.1");
+    expectEqual(`${item.name} version`, pkg.version, item.version);
     expectEqual(`${item.name} type`, pkg.type, "module");
     expectEqual(`${item.name} engines.node`, pkg.engines?.node, ">=18");
     expectEqual(`${item.name} types`, pkg.types, "./dist/index.d.ts");
