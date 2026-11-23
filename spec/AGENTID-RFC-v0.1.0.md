@@ -13,7 +13,7 @@
 
 > The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
 
-> `verification_level` is the integer 0-3. Owner display names are not on the bearer token. Revocation freshness is bounded by remaining token lifetime and cache TTL. Delegation hops at exchange are signed and must narrow (Section 3.5). The hosted registry is `https://registry.agentidp.dev`.
+> `verification_level` is the integer 0-3. Owner display names are not on the bearer token. JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)`. Status cache TTL is `min(token remaining life, configured TTL, Cache-Control max-age)`, and status is fetched only when `checkRevocation` is true (default false). Delegation hops at exchange are signed and must narrow (Section 3.5). The hosted registry is `https://registry.agentidp.dev`.
 
 ---
 
@@ -90,7 +90,7 @@ The protocol MUST satisfy the following requirements:
 2. **Owner accountability.** Every agent identity MUST be traceable to a verified human or organisational owner.
 3. **Granular access control.** Services MUST be able to define policies based on agent identity, owner identity, verification level, and declared capabilities.
 4. **Delegation transparency.** When an agent acts on behalf of another agent, the signed hops MUST be present at token exchange so a service can inspect them. Each hop is a compact JWS signed by the delegator (Section 3.5). Unsigned JSON objects MUST be rejected.
-5. **Revocability.** A registry MUST be able to mark an agent revoked or suspended. A verifier that caches keys or status can learn of that change only as fast as the shorter of remaining token lifetime and its key or revocation-cache TTL (Section 4.3). Immediate revocation is not required on the cached path.
+5. **Revocability.** A registry MUST be able to mark an agent revoked or suspended. JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)` and is not shortened by remaining token lifetime. Status is fetched only when `checkRevocation` is true (default false); that cache TTL is `min(token remaining life, configured TTL, Cache-Control max-age)` (Section 4.3). Immediate revocation is not required on the cached path.
 6. **Interoperability.** The protocol MUST work across agent frameworks (LangChain, CrewAI, AutoGen, MCP, custom), programming languages, and deployment models.
 7. **Performance.** Token verification MUST be possible offline (no round-trip) using cached public keys, with registry lookups reserved for enhanced checks.
 
@@ -477,12 +477,11 @@ When an owner revokes an agent, or the registry suspends one for abuse, the regi
 
 This specification does **not** guarantee immediate or real-time revocation at every verifier.
 
-A verifier that caches JWKS or revocation/status results can learn of a revocation only as fast as the **shorter** of:
+JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)`. Remaining token lifetime does not shorten the JWKS cache.
 
-1. remaining lifetime of an AgentIDP token it already holds (`exp - now`), and
-2. the TTL of its key cache or revocation/status cache.
+Status is a separate path. `@agentidp/verify` fetches status only when `checkRevocation` is true (default false). That cache TTL is `min(token remaining life, configured TTL, Cache-Control max-age)`.
 
-Effective revocation latency is therefore bounded by `min(remaining token TTL, verifier cache TTL)`. A verifier that never calls the status endpoint, and that still accepts a previously cached key, can accept tokens from a revoked agent until those tokens expire. `@agentidp/verify` caches JWKS (default 1 hour) and, when `checkRevocation` is true, status (default 60 seconds). It verifies tokens against registry JWKS keys only, or a caller-supplied `getKey`. It does not fetch an agent public key for signature verify.
+A verifier that never calls the status endpoint can accept tokens from a revoked agent until those tokens expire. `@agentidp/verify` caches JWKS (default 1 hour) and, when `checkRevocation` is true, status (default 60 seconds). It verifies tokens against registry JWKS keys only, or a caller-supplied `getKey`. It does not fetch an agent public key for signature verify.
 
 | Path | What it tells you | Freshness |
 |------|-------------------|-----------|

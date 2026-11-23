@@ -89,7 +89,7 @@ Protocol (AgentIDP token format), hosted registry (lookup, verification, revocat
 ### Owner accountability
 
 - Verification levels 0-3: 0 email unconfirmed, 1 email confirmed, 2 domain control, 3 organisation / KYB. The claim is the integer.
-- Every AgentIDP token carries `owner_id`, `owner_type`, `verification_level`. Display names come from registry lookup (`verified_domain` at Level 2+).
+- Registry-issued AgentIDP tokens carry `owner_id`, `owner_type`, and `verification_level`. Tokens minted locally with the SDK may omit them. Display names come from registry lookup (`verified_domain` at Level 2+).
 - Services can set a minimum verification level (for example, domain-verified owners only).
 
 ### Delegation

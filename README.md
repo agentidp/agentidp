@@ -129,7 +129,7 @@ Canonical paths are `/api/v1/...` and `/.well-known/jwks.json`. There are no bar
 
 Pass `getKey` for offline verification or tests that do not call the network.
 
-`@agentidp/verify` caches JWKS in memory (default TTL 1 hour; honour a shorter `Cache-Control` `max-age`). Status / revocation cache default is 60 seconds. When `checkRevocation` is true, freshness is `min(token remaining life, cache TTL, Cache-Control max-age)`. `checkRevocation` defaults to false. `rateLimit` without a `rateLimitStore` is in-memory on this process only. It does not enforce a global cap across instances.
+`@agentidp/verify` caches JWKS in memory (default TTL 1 hour). JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)`. Status / revocation cache default is 60 seconds. Status is fetched only when `checkRevocation` is true (default false); that cache TTL is `min(token remaining life, configured TTL, Cache-Control max-age)`. `rateLimit` without a `rateLimitStore` is in-memory on this process only. It does not enforce a global cap across instances.
 
 Set `checkRevocation: true` to query agent status. Set `lookupOwner: true` to fill `verified_domain` (and `owner_id` / `owner_type`) from public lookup. Lookup does not copy an owner display name.
 
@@ -142,7 +142,7 @@ An AgentIDP token is an ES256 JWT (header `typ` `AIT+jwt`) with agent identity, 
 | Topic | Rule |
 | --- | --- |
 | Verification levels | Integer 0-3: Unverified (email unconfirmed), Email (email confirmed), Domain, Organisation. Names are prose only. |
-| Revocation | `@agentidp/verify` caches JWKS (default 1 hour) and status (default 60 seconds). Freshness is `min(token remaining life, cache TTL, Cache-Control max-age)`. Status is checked only when `checkRevocation` is true. Tokens verify against registry JWKS only (or `getKey`). |
+| Revocation | `@agentidp/verify` caches JWKS (default 1 hour). JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)`. Status cache default is 60 seconds, fetched only when `checkRevocation` is true (default false); that TTL is `min(token remaining life, configured TTL, Cache-Control max-age)`. Tokens verify against registry JWKS only (or `getKey`). |
 | Delegation | Signed narrowing hops (header `typ` `AIT-DLG+jwt`) required at exchange. Unsigned JSON hops are rejected. |
 | Owner identity on the token | `owner_id` and `owner_type` only. Display names come from registry lookup (`verified_domain` at Level 2+). |
 

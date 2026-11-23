@@ -79,8 +79,8 @@ Canonical paths are `/api/v1/...` plus well-known JWKS. There are no bare `/v1/.
 
 | Method | Path | Body |
 | --- | --- | --- |
-| `GET` | `/.well-known/jwks.json` | `{ keys: JWK[] }`. Registry `Cache-Control: public, max-age=86400` (verifier caps at 1h) |
+| `GET` | `/.well-known/jwks.json` | `{ keys: JWK[] }`. Registry `Cache-Control: public, max-age=3600` |
 | `GET` | `/api/v1/agents/{id}/status` | `{ agent_id, status, checked_at }` where `status` is `active` / `revoked` / `suspended`. `max-age=60` |
 | `GET` | `/api/v1/agents/{id}` | Public lookup, including `owner` and `status`. Used for `lookupOwner` and as a status fallback |
 
-There is no CRL, introspect, or denylist endpoint on the current registry. Revocation is the status field. `@agentidp/verify` caches JWKS (default 1 hour, honour a shorter `Cache-Control` `max-age`) and status (default 60 seconds). When `checkRevocation` is true, freshness is `min(remaining token TTL, cache TTL, Cache-Control max-age)`. Status is not fetched unless `checkRevocation` is true. Pass `getKey` for offline verify. This package does not verify a resource-server DPoP proof. Designed alongside RFC 8693 token exchange and RFC 9449 DPoP. Resource-server DPoP and formal profiles of these specs are on the roadmap.
+There is no CRL, introspect, or denylist endpoint on the current registry. Revocation is the status field. `@agentidp/verify` caches JWKS (default 1 hour). JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)`. Status cache default is 60 seconds. Status is fetched only when `checkRevocation` is true (default false); that cache TTL is `min(token remaining life, configured TTL, Cache-Control max-age)`. Pass `getKey` for offline verify. This package does not verify a resource-server DPoP proof. Designed alongside RFC 8693 token exchange and RFC 9449 DPoP. Resource-server DPoP and formal profiles of these specs are on the roadmap.
