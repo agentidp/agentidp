@@ -79,7 +79,7 @@ Canonical paths are `/api/v1/...` plus well-known JWKS. There are no bare `/v1/.
 
 | Method | Path | Body |
 | --- | --- | --- |
-| `GET` | `/.well-known/jwks.json` | `{ keys: JWK[] }`. Registry `Cache-Control: public, max-age=3600` |
+| `GET` | `/.well-known/jwks.json` | `{ keys: JWK[] }`. Empty set: `Cache-Control: no-store`. Otherwise `public, max-age=300, s-maxage=60, stale-while-revalidate=60` |
 | `GET` | `/api/v1/agents/{id}/status` | `{ agent_id, status, checked_at }` where `status` is `active` / `revoked` / `suspended`. `max-age=60` |
 | `GET` | `/api/v1/agents/{id}` | Public lookup, including `owner` and `status`. Used for `lookupOwner` and as a status fallback |
 
