@@ -2,7 +2,7 @@
 
 Not affiliated with AgentMail's AgentID (agentid.com).
 
-Open protocol for agent identity, authentication and access control. A service that verifies an AgentIDP token can answer:
+AgentIDP is an open identity standard and protocol for AI agents, with a hosted registry, TypeScript SDKs, and a dashboard. A service that verifies an AgentIDP token can answer:
 
 1. Which agent is this?
 2. Who is accountable for it?
@@ -10,9 +10,13 @@ Open protocol for agent identity, authentication and access control. A service t
 
 OAuth covers user-to-app delegation. OpenID Connect covers user identity federation. AgentIDP covers agent-to-service identity.
 
+Agents hold their own keys. Owners register after email verification. Token exchange mints a short-lived, registry-signed AgentIDP token bound to the agent key (`cnf.jkt`). Delegation hops are signed compact JWS and can only narrow. `@agentidp/verify` checks JWKS and, when asked, revocation status.
+
+Designed alongside RFC 8693 token exchange and RFC 9449 DPoP. Resource-server DPoP and formal profiles of these specs are on the roadmap.
+
 ## TypeScript packages
 
-This repository holds the protocol text and the TypeScript packages the site documents:
+This repository holds the protocol text and the TypeScript packages:
 
 | Package | Path | Version | Role |
 | --- | --- | --- | --- |
@@ -20,16 +24,15 @@ This repository holds the protocol text and the TypeScript packages the site doc
 | [`@agentidp/verify`](packages/verify) | `packages/verify` | `0.3.0` | Service-side: verify an AgentIDP token and protect an HTTP route |
 | [`@agentidp/mcp`](packages/mcp) | `packages/mcp` | `0.1.0` | MCP server: look up, verify, register and mint from a coding agent |
 
-All three are published on npm under the `@agentidp` scope. Releases follow [docs/npm-publish.md](docs/npm-publish.md).
-
-After that publish:
+All three are on npm under the `@agentidp` scope. Releases follow [docs/npm-publish.md](docs/npm-publish.md).
 
 ```bash
-npm i @agentidp/sdk
-npm i @agentidp/verify
+npm install @agentidp/sdk @agentidp/verify
 ```
 
-Until then, clone this repo and install from the workspace or a local path:
+The MCP server is `npx -y @agentidp/mcp` (stdio). See [`packages/mcp`](packages/mcp).
+
+From this workspace:
 
 ```bash
 git clone https://github.com/agentidp/agentidp.git
@@ -37,13 +40,6 @@ cd agentidp
 pnpm install
 pnpm build
 pnpm test
-```
-
-From another project, after `pnpm build` in this repo:
-
-```bash
-pnpm add @agentidp/sdk@file:../agentidp/packages/sdk
-pnpm add @agentidp/verify@file:../agentidp/packages/verify
 ```
 
 ### Agent SDK
@@ -67,7 +63,7 @@ await fetch("https://api.example.com/submit", {
 });
 ```
 
-When `apiKey` is set, `getToken` builds a proof JWT and calls `POST /api/v1/tokens/exchange`. Without it, `AgentAuth` still signs locally with the agent private key (PEM or JWK). Pass optional owner fields at construct time when you want them on a locally minted token. `verificationLevel` is an integer 0–3. Do not pass a name string.
+When `apiKey` is set, `getToken` builds a proof JWT and calls `POST /api/v1/tokens/exchange`. Without it, `AgentAuth` signs locally with the agent private key (PEM or JWK). Local mint is not the registry path. Pass optional owner fields at construct time when you want them on a locally minted token. `verificationLevel` is an integer 0-3. Do not pass a name string.
 
 ```ts
 const auth = new AgentAuth({
@@ -79,7 +75,9 @@ const auth = new AgentAuth({
 });
 ```
 
-`owner_name` is not a protocol claim. The SDK does not require it and does not invent one. Owner display info comes from registry lookup; for Level 2+ the protocol field is `verified_domain`.
+The SDK does not require an owner display name and does not invent one. Owner display info comes from registry lookup. For Level 2+ the protocol field is `verified_domain`.
+
+Public exports include `AgentAuth`, `generateAgentKeyPair`, `createProofJwt`, `exchangeToken`, `registerAgentPublicKey`, `createDelegationHop`, `hopNarrows`, `isSubset`, and `publicKeyAudience`. To replace an existing key with an owner API key, `registerPublicKey({ currentPrivateKey })` sends a proof JWT. Agent creation is `POST /api/v1/agents` on the registry.
 
 ### Service middleware
 
@@ -100,20 +98,25 @@ app.post(
 );
 ```
 
-`req.agent` carries `agent_id` and `owner_id` when those claims are on the token. `owner_name` is not required. Use `verifyAgentToken(token, options)` outside Express.
+`req.agent` carries `agent_id` and `owner_id` when those claims are on the token. Use `verifyAgentToken(token, options)` outside Express. `audience` is required unless `requireAudience` is false. Only registry JWKS keys (or a caller-supplied `getKey`) verify tokens. On 401, `agentIdMiddleware` sends a `WWW-Authenticate` discovery challenge (spec §3.4.3).
+
+### MCP server
+
+`@agentidp/mcp` is a stdio MCP server for the registry. Tools: `lookup_agent`, `agent_status`, `verify_token` (no API key); `register_agent`, `rotate_agent_key`, `mint_token` (owner API key). Private keys stay in `~/.agentidp/keys` and are never returned by a tool. Configure with `AGENTIDP_API_KEY`, `AGENTIDP_REGISTRY_URL`, and `AGENTIDP_KEY_DIR`. Export `createAgentIdpServer` for a custom transport. There is no hosted or HTTP MCP endpoint.
 
 ## Live registry
 
-The default issuer is `https://registry.agentidp.dev`. Point the SDKs at a running registry with:
+The hosted registry is live at [https://registry.agentidp.dev](https://registry.agentidp.dev). Point the SDKs at it with:
 
 | Variable | Used by | Default |
 | --- | --- | --- |
-| `AGENTIDP_REGISTRY_URL` | both packages | `https://registry.agentidp.dev` |
+| `AGENTIDP_REGISTRY_URL` | sdk, verify, mcp | `https://registry.agentidp.dev` |
 | `AGENT_PRIVATE_KEY` | `@agentidp/sdk` | none (caller supplies PEM or JWK) |
-| `AGENTIDP_API_KEY` | `@agentidp/sdk` | none (owner API key for token exchange) |
+| `AGENTIDP_API_KEY` | `@agentidp/sdk`, `@agentidp/mcp` | none (owner API key for token exchange and write tools) |
 | `AGENTIDP_JWKS_URI` | `@agentidp/verify` | `{AGENTIDP_REGISTRY_URL}/.well-known/jwks.json` |
+| `AGENTIDP_KEY_DIR` | `@agentidp/mcp` | `~/.agentidp/keys` |
 
-Registry contract locked to `/api/v1/` plus well-known JWKS (`agentidp/registry` main, Connor). The registry is live at `https://registry.agentidp.dev`. There are no bare `/v1/...` routes.
+Canonical paths are `/api/v1/...` and `/.well-known/jwks.json`. There are no bare `/v1/...` routes.
 
 | Method | Path | Purpose |
 | --- | --- | --- |
@@ -124,30 +127,30 @@ Registry contract locked to `/api/v1/` plus well-known JWKS (`agentidp/registry`
 | `GET` | `/api/v1/agents/{agent_id}/status` | `{ agent_id, status, checked_at }` (`active` / `revoked` / `suspended`) |
 | `GET` | `/api/v1/agents/{agent_id}` | Public lookup, including owner fields and `status` when the registry returns them |
 
-Pass `getKey` in tests or offline verification. Tests mock JWKS and status so CI does not need a live registry.
+Pass `getKey` for offline verification or tests that do not call the network.
 
-Key cache is in memory (default TTL 1 hour; honour a shorter `Cache-Control` `max-age`). JWKS cache recommendation is 1 hour in the spec and in this verifier. Revocation cache default is 60 seconds. Freshness is `min(token remaining life, cache TTL, Cache-Control max-age)`. Revocation is not immediate on the cached path. `rateLimit` without a `rateLimitStore` is in-memory on this process only. It does not enforce a global cap across instances.
+`@agentidp/verify` caches JWKS in memory (default TTL 1 hour). JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)`. Status / revocation cache default is 60 seconds. Status is fetched only when `checkRevocation` is true (default false); that cache TTL is `min(token remaining life, configured TTL, Cache-Control max-age)`. `rateLimit` without a `rateLimitStore` is in-memory on this process only. It does not enforce a global cap across instances.
 
-Set `checkRevocation: true` when a registry is reachable. Set `lookupOwner: true` to fill `verified_domain` (and `owner_id` / `owner_type`) from public lookup. Lookup does not copy `owner_name`.
+Set `checkRevocation: true` to query agent status. Set `lookupOwner: true` to fill `verified_domain` (and `owner_id` / `owner_type`) from public lookup. Lookup does not copy an owner display name.
 
 ## Specification
 
 Full text: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md). Test vectors: [`spec/vectors/token-exchange-v0.1.json`](spec/vectors/token-exchange-v0.1.json).
 
-An AgentIDP token is an ES256 JWT (`typ: AIT+jwt`) with agent identity, integer `verification_level` 0–3, capabilities, required `aud`, and `cnf.jkt` on tokens minted by exchange. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the signature without a round-trip. Resource-server DPoP (`DPoP` header, `htm`/`htu`/`ath`) is not implemented. Related IETF drafts (RFC 8693, RFC 9421, Web Bot Auth, WIMSE, AAuth) are related work, not profiles of this spec.
+An AgentIDP token is an ES256 JWT (header `typ` `AIT+jwt`) with agent identity, integer `verification_level` 0-3, capabilities, required `aud`, and `cnf.jkt` on tokens minted by exchange. Maximum lifetime is 24 hours. A service with the issuer's public key can verify the signature without a round-trip. Resource-server DPoP (`DPoP` header, `htm`/`htu`/`ath`) is not implemented. Designed alongside RFC 8693 token exchange and RFC 9449 DPoP. Resource-server DPoP and formal profiles of these specs are on the roadmap.
 
-| Topic | v0.1 rule |
+| Topic | Rule |
 | --- | --- |
-| Verification levels | Integer 0–3: Unverified (email unconfirmed), Email (email confirmed), Domain, Organisation. Names are prose only. |
-| Revocation | Not immediate on the offline path. Effective latency is `min(remaining token TTL, verifier cache TTL)`. JWKS cache recommendation: 1 hour. |
-| Delegation | Signed narrowing hops (`AIT-DLG+jwt`) required at exchange. Unsigned v0.1 JSON hops are superseded and rejected. |
+| Verification levels | Integer 0-3: Unverified (email unconfirmed), Email (email confirmed), Domain, Organisation. Names are prose only. |
+| Revocation | `@agentidp/verify` caches JWKS (default 1 hour). JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)`. Status cache default is 60 seconds, fetched only when `checkRevocation` is true (default false); that TTL is `min(token remaining life, configured TTL, Cache-Control max-age)`. Tokens verify against registry JWKS only (or `getKey`). |
+| Delegation | Signed narrowing hops (header `typ` `AIT-DLG+jwt`) required at exchange. Unsigned JSON hops are rejected. |
 | Owner identity on the token | `owner_id` and `owner_type` only. Display names come from registry lookup (`verified_domain` at Level 2+). |
 
-Earlier drafts used a three-letter token name that collides with the OAuth WG Agent Intent Token. JWT `typ` remains `AIT+jwt`. Proof JWTs use `AIT-POP+jwt`. Delegation hops use `AIT-DLG+jwt`. Those strings are wire identifiers.
+JWT `typ` remains `AIT+jwt`. Proof JWTs use `AIT-POP+jwt`. Delegation hops use `AIT-DLG+jwt`. Those strings are wire identifiers. In prose this credential is an AgentIDP token.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Use [GitHub Issues](https://github.com/agentidp/agentidp/issues) and [Pull Requests](https://github.com/agentidp/agentidp/pulls).
+See [CONTRIBUTING.md](CONTRIBUTING.md) and [AGENTS.md](AGENTS.md). Use [GitHub Issues](https://github.com/agentidp/agentidp/issues) and [Pull Requests](https://github.com/agentidp/agentidp/pulls).
 
 ```bash
 pnpm install
@@ -164,4 +167,5 @@ Apache 2.0 ([LICENSE](LICENSE)).
 - Specification: [`spec/AGENTID-RFC-v0.1.0.md`](spec/AGENTID-RFC-v0.1.0.md)
 - npm publish checklist: [`docs/npm-publish.md`](docs/npm-publish.md)
 - Site: [agentidp.dev](https://agentidp.dev)
+- Registry: [registry.agentidp.dev](https://registry.agentidp.dev)
 - GudLab: [gudlab.org](https://gudlab.org)

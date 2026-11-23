@@ -5,17 +5,15 @@
 | Field | Value |
 |-------|-------|
 | **Version** | 0.1.0 |
-| **Status** | AgentIDP token draft (v0.1) |
+| **Status** | Protocol specification v0.1 |
 | **Date** | 18 November 2026 |
 | **Authors** | Timchosen Uzua |
 | **Published by** | GudLab \| gudlab.org |
 | **License** | Apache 2.0 (this specification) |
 
-> This document is a **draft protocol specification**. It is not an SDK, a hosted registry, or a product. Code samples and hostnames below are illustrative.
-
-> 18 November 2026 honesty revision: `verification_level` is the integer 0–3; owner display names are not on the bearer token; revocation freshness is bounded by remaining token lifetime and cache TTL; unsigned v0.1 delegation hops are superseded by signed narrowing hops at exchange (Section 3.5).
-
 > The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD", "SHOULD NOT", "RECOMMENDED", "MAY", and "OPTIONAL" in this document are to be interpreted as described in [RFC 2119](https://www.ietf.org/rfc/rfc2119.txt).
+
+> `verification_level` is the integer 0-3. Owner display names are not on the bearer token. JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)`. Status cache TTL is `min(token remaining life, configured TTL, Cache-Control max-age)`, and status is fetched only when `checkRevocation` is true (default false). Delegation hops at exchange are signed and must narrow (Section 3.5). The hosted registry is `https://registry.agentidp.dev`.
 
 ---
 
@@ -44,7 +42,7 @@ The AgentIDP protocol defines an open standard for establishing, verifying, and 
 - **Who is accountable for it?**
 - **What is it permitted to do?**
 
-This draft specifies a lightweight, cryptographically verifiable identity layer for those agents. It draws on patterns from OAuth 2.0, OpenID Connect, X.509, and SPIFFE, adapted for non-human actors that operate at machine speed, chain together in delegation hierarchies, and act on behalf of principals who may not be present at the time of action.
+This specification defines a lightweight, cryptographically verifiable identity layer for those agents. It draws on patterns from OAuth 2.0, OpenID Connect, X.509, and SPIFFE, adapted for non-human actors that operate at machine speed, chain together in delegation hierarchies, and act on behalf of principals who may not be present at the time of action.
 
 This specification defines:
 
@@ -56,7 +54,7 @@ This specification defines:
 
 ### Design Principles
 
-**Open specification.** This document is Apache 2.0. Anyone MAY implement a compliant registry or verifier. A public registry runs at `registry.agentidp.dev`; it is one implementation, not part of the protocol. A hosted registry MAY be commercial; that is out of scope for this draft.
+**Open specification.** This document is Apache 2.0. Anyone MAY implement a compliant registry or verifier. The hosted registry at `https://registry.agentidp.dev` implements this protocol. `@agentidp/sdk` and `@agentidp/verify` implement the agent-side and service-side contracts. `@agentidp/mcp` is a stdio MCP server for that registry.
 
 ---
 
@@ -88,13 +86,13 @@ Without a standardised agent identity layer, services face the following threats
 
 The protocol MUST satisfy the following requirements:
 
-1. **Verifiable identity** — A service MUST be able to cryptographically verify an agent's identity without a synchronous call to a central authority.
-2. **Owner accountability** — Every agent identity MUST be traceable to a verified human or organisational owner.
-3. **Granular access control** — Services MUST be able to define policies based on agent identity, owner identity, verification level, and declared capabilities.
-4. **Delegation transparency** — When an agent acts on behalf of another agent, the signed hops MUST be present at token exchange so a service can inspect them. Each hop is a compact JWS signed by the delegator (Section 3.5). Unsigned v0.1 objects are superseded and MUST be rejected.
-5. **Revocability** — A registry MUST be able to mark an agent revoked or suspended. A verifier that caches keys or status can learn of that change only as fast as the shorter of remaining token lifetime and its key or revocation-cache TTL (Section 4.3). This draft does not require immediate or real-time revocation on the offline path.
-6. **Interoperability** — The protocol MUST work across agent frameworks (LangChain, CrewAI, AutoGen, MCP, custom), programming languages, and deployment models.
-7. **Performance** — Token verification MUST be possible offline (no round-trip) using cached public keys, with registry lookups reserved for enhanced checks.
+1. **Verifiable identity.** A service MUST be able to cryptographically verify an agent's identity without a synchronous call to a central authority.
+2. **Owner accountability.** Every agent identity MUST be traceable to a verified human or organisational owner.
+3. **Granular access control.** Services MUST be able to define policies based on agent identity, owner identity, verification level, and declared capabilities.
+4. **Delegation transparency.** When an agent acts on behalf of another agent, the signed hops MUST be present at token exchange so a service can inspect them. Each hop is a compact JWS signed by the delegator (Section 3.5). Unsigned JSON objects MUST be rejected.
+5. **Revocability.** A registry MUST be able to mark an agent revoked or suspended. JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)` and is not shortened by remaining token lifetime. Status is fetched only when `checkRevocation` is true (default false); that cache TTL is `min(token remaining life, configured TTL, Cache-Control max-age)` (Section 4.3). Immediate revocation is not required on the cached path.
+6. **Interoperability.** The protocol MUST work across agent frameworks (LangChain, CrewAI, AutoGen, MCP, custom), programming languages, and deployment models.
+7. **Performance.** Token verification MUST be possible offline (no round-trip) using cached public keys, with registry lookups reserved for enhanced checks.
 
 ---
 
@@ -104,7 +102,7 @@ The protocol MUST satisfy the following requirements:
 
 The AgentIDP token is a signed JSON Web Token (JWT) conforming to [RFC 7519](https://datatracker.ietf.org/doc/html/rfc7519), with a custom claim set designed for agent identification. Registry-issued tokens are self-contained: any service with access to the issuer's public key can verify the token without contacting the registry for the signature check.
 
-JWT `typ` remains `AIT+jwt`. That historical wire value is unchanged so existing tokens keep verifying. Proof JWTs use `AIT-POP+jwt` and delegation hops use `AIT-DLG+jwt`. Those strings are wire identifiers; this document names the credential an **AgentIDP token**. Earlier drafts called it an Agent Identity Token (AIT). That name was retired because the OAuth WG uses AIT for Agent Intent Token.
+JWT `typ` remains `AIT+jwt`. That historical wire value is unchanged so existing tokens keep verifying. Proof JWTs use `AIT-POP+jwt` and delegation hops use `AIT-DLG+jwt`. Those strings are wire identifiers. This document names the credential an **AgentIDP token**.
 
 #### 3.1.1 Token Structure
 
@@ -216,7 +214,7 @@ Agent registration is a two-phase process: owner verification (performed once) f
 
 **Phase 1: Owner Registration**
 
-1. Owner signs up at an AgentIDP-compliant registry. This draft uses `registry.agentidp.dev`, the public registry, in its examples.
+1. Owner signs up at an AgentIDP-compliant registry. The hosted registry is `https://registry.agentidp.dev`.
 2. Owner completes verification to their desired level (Section 3.2): Unverified (account only), Email, Domain, or Organisation (KYB).
 3. Registry issues an `owner_id` and an owner API key for agent management operations.
 
@@ -285,7 +283,7 @@ Earlier v0.1 drafts put unsigned JSON objects in `delegation_chain`, covered onl
 
 #### 3.5.1 Delegation Chain Structure
 
-On `POST /api/v1/tokens/exchange`, `delegation_chain` is an ordered array of **compact JWS** hops, from the first delegating agent (index 0) to the hop whose `sub` is the acting agent. Unsigned JSON objects MUST be rejected (`AID-009`). Owner/user hops (`principal_type: user`) are not accepted in this version; they require owner signing keys that this draft does not specify.
+On `POST /api/v1/tokens/exchange`, `delegation_chain` is an ordered array of **compact JWS** hops, from the first delegating agent (index 0) to the hop whose `sub` is the acting agent. Unsigned JSON objects MUST be rejected (`AID-009`). Owner/user hops (`principal_type: user`) are not accepted in this version; they require owner signing keys that this specification does not define.
 
 Each hop MUST be signed by the **delegating** agent's registered key (`alg` `ES256` or `EdDSA`). The JWT `typ` SHOULD be `AIT-DLG+jwt` (wire identifier). If `typ` is present, it MUST be `AIT-DLG+jwt` or `JWT`.
 
@@ -421,25 +419,13 @@ The registry MUST record each proof `jti` until the proof expires (implementatio
 
 ### 3.7 Related IETF work
 
-This protocol borrows patterns. It is not a profile of the documents below unless a sentence in this section says so.
-
-**[RFC 8693](https://www.rfc-editor.org/rfc/rfc8693.html) OAuth 2.0 Token Exchange.** AgentIDP token exchange is a JSON `POST` that returns a new token given owner authentication and an agent proof. It does **not** use `application/x-www-form-urlencoded`, `grant_type=urn:ietf:params:oauth:grant-type:token-exchange`, `subject_token`, or `actor_token`. Implementations MUST NOT claim RFC 8693 compatibility. A later revision MAY add a form-encoded alias; this version does not.
-
-**[RFC 9449](https://www.rfc-editor.org/rfc/rfc9449.html) DPoP and [RFC 7800](https://www.rfc-editor.org/rfc/rfc7800.html) confirmation.** Minted tokens carry `cnf.jkt` so a later DPoP verifier can bind the token to the agent key. This specification does not require resource servers to verify a DPoP proof JWT. Sender-constrained use at resource servers is out of scope.
-
-**[RFC 9421](https://www.rfc-editor.org/rfc/rfc9421.html) HTTP Message Signatures.** AgentIDP tokens are JWTs presented in `Authorization`. This specification does not define `Signature-Input` or `Signature` headers and does not implement RFC 9421.
-
-**IETF Web Bot Auth** (HTTP Message Signatures for automated traffic, e.g. `draft-meunier-webbotauth-httpsig-protocol`). Web Bot Auth identifies automated HTTP clients with RFC 9421 signatures. AgentIDP identifies agents, owners, and capabilities with a registry-issued JWT. The two can be used together. This specification does not implement Web Bot Auth.
-
-**WIMSE** (Workload Identity in Multi-System Environments). WIMSE defines workload identifiers and HTTP-signature credentials for workloads. AgentIDP agents are not WIMSE workloads in this version. No WIMSE identifier is required.
-
-**AAuth** (agent authorization grant drafts, e.g. `draft-rosenberg-oauth-aauth`). AAuth extends OAuth for agent grants. AgentIDP is a separate protocol. This specification does not implement an AAuth grant and does not claim compatibility.
+Designed alongside RFC 8693 token exchange and RFC 9449 DPoP. Resource-server DPoP and formal profiles of these specs are on the roadmap.
 
 ---
 
 ## 4. Agent Registry Architecture
 
-The Agent Registry is specified as the trust anchor: it stores agent public keys, owner verification records, revocation status, and provides APIs for registration, lookup, and verification. A public instance is not part of this draft.
+The Agent Registry is the trust anchor: it stores agent public keys, owner verification records, revocation status, and provides APIs for registration, lookup, token exchange, and verification. The hosted registry is `https://registry.agentidp.dev`.
 
 ### 4.1 Registry API
 
@@ -489,23 +475,22 @@ GET /api/v1/agents/ag_7xK9m2nP4qRtL8
 
 When an owner revokes an agent, or the registry suspends one for abuse, the registry sets that agent's status to `"revoked"` or `"suspended"`. A client that queries the registry after that write sees the new status.
 
-This draft does **not** guarantee immediate or real-time revocation at every verifier.
+This specification does **not** guarantee immediate or real-time revocation at every verifier.
 
-A verifier that caches public keys, JWKS, or revocation/status results can learn of a revocation only as fast as the **shorter** of:
+JWKS cache TTL is `min(configured TTL, a shorter Cache-Control max-age)`. Remaining token lifetime does not shorten the JWKS cache.
 
-1. remaining lifetime of an AgentIDP token it already holds (`exp - now`), and
-2. the TTL of its key cache or revocation/status cache.
+Status is a separate path. `@agentidp/verify` fetches status only when `checkRevocation` is true (default false). That cache TTL is `min(token remaining life, configured TTL, Cache-Control max-age)`.
 
-Effective revocation latency is therefore bounded by `min(remaining token TTL, verifier cache TTL)`. A verifier that never calls the status endpoint, and that still accepts a previously cached key, can accept tokens from a revoked agent until those tokens expire.
+A verifier that never calls the status endpoint can accept tokens from a revoked agent until those tokens expire. `@agentidp/verify` caches JWKS (default 1 hour) and, when `checkRevocation` is true, status (default 60 seconds). It verifies tokens against registry JWKS keys only, or a caller-supplied `getKey`. It does not fetch an agent public key for signature verify.
 
 | Path | What it tells you | Freshness |
 |------|-------------------|-----------|
 | Live `GET /api/v1/agents/{agent_id}/status` | Registry status at query time | Current for that request |
-| Cached JWKS or agent public key | Key material only, not status | Up to the key-cache TTL (RECOMMENDED maximum 1 hour; MUST honour a shorter `Cache-Control`) |
+| Cached JWKS | Key material only, not status | Up to the JWKS-cache TTL (RECOMMENDED maximum 1 hour; MUST honour a shorter `Cache-Control`) |
 | Token `exp` | When this AgentIDP token stops being acceptable without a new mint | At most 24 hours from `iat` (Section 3.1.3) |
 | CRL or OCSP-style stapling | Optional shorter-lived status | Only if the verifier uses it |
 
-CRL and OCSP-style stapling MAY be offered as a fresher path. Neither is required in v0.1. This draft does not claim either is deployed.
+CRL and OCSP-style stapling MAY be offered as a fresher path. Neither is required in v0.1. Neither is deployed on the hosted registry.
 
 A statement that revocation is immediate or real-time is accurate only for a verifier that calls a live status endpoint (or an equivalent staple) on every decision. It is not accurate for the offline or cached-key path. Verifiers that set `checkRevocation` SHOULD cache status results with a short TTL and MUST treat cache freshness as `min(remaining token lifetime, status-cache TTL, Cache-Control max-age)`.
 
@@ -515,7 +500,7 @@ A statement that revocation is immediate or real-time is accurate only for a ver
 
 ### 5.1 System Components
 
-A compliant deployment MAY include the following components. They are not provided by this repository:
+A compliant deployment MAY include the following components. The hosted registry at `https://registry.agentidp.dev` implements the registry, auth, verification, and dashboard rows. This repository holds the protocol text and the TypeScript packages.
 
 | Component | Description |
 |-----------|-------------|
@@ -578,9 +563,9 @@ The following sequence describes the end-to-end flow from agent registration to 
 
 This flow does **not** include resource-server DPoP proofs.
 
-### 5.4 SDK Design (illustrative)
+### 5.4 SDK Design
 
-The following sketches show how an implementer *might* wrap the protocol. `@agentidp/sdk` and `@agentidp/verify` live in this repository. They are **not published to npm** in this draft.
+`@agentidp/sdk` and `@agentidp/verify` implement the agent-side and service-side contracts. Install with `npm install @agentidp/sdk @agentidp/verify`. `@agentidp/mcp` is a stdio MCP server for the hosted registry (`npx -y @agentidp/mcp`).
 
 **Agent SDK** (for agent developers)
 
@@ -688,11 +673,11 @@ The specification is maintained in a public GitHub repository with an RFC-style 
 
 ### 8.2 Registry
 
-The public registry at `registry.agentidp.dev` is the issuer (`iss`) used in the examples. Additional registries MAY operate later as federated trust providers; federation is not specified here.
+The hosted registry is `https://registry.agentidp.dev`. Additional registries MAY operate as federated trust providers; federation is not specified here.
 
-### 8.3 Hosted registry (optional, later)
+### 8.3 Hosted registry
 
-If a hosted registry is operated later, it MAY be commercial. This specification does **not** define prices, SKUs, or SLAs. Do not treat any table or hostname in earlier drafts as a live offering.
+The hosted registry MAY be commercial. This specification does **not** define prices, SKUs, or SLAs.
 
 ---
 
@@ -700,8 +685,8 @@ If a hosted registry is operated later, it MAY be commercial. This specification
 
 | Version | Status | Focus |
 |---------|--------|-------|
-| **v0.1.0** | Draft (this document) | AgentIDP token format, token exchange with proof JWT, `cnf.jkt`, integer verification levels 0–3, access tiers, signed narrowing hops at exchange (unsigned v0.1 hops superseded), registry shape |
-| Later | Not started | npm publish, federation, and framework adapters |
+| **v0.1.0** | This document | AgentIDP token format, token exchange with proof JWT, `cnf.jkt`, integer verification levels 0-3, access tiers, signed narrowing hops at exchange, hosted registry, TypeScript packages |
+| Later | Planned | Resource-server DPoP, formal profiles of RFC 8693 and RFC 9449, federation, framework adapters |
 
 ---
 
@@ -756,7 +741,7 @@ com.acme.memory:export
 
 | Term | Definition |
 |------|------------|
-| **AgentIDP token** | The registry-signed JWT that an agent presents to authenticate itself. Earlier drafts called this an Agent Identity Token (AIT). That name was retired because the OAuth WG uses AIT for Agent Intent Token. JWT `typ` remains `AIT+jwt`. |
+| **AgentIDP token** | The registry-signed JWT that an agent presents to authenticate itself. JWT `typ` remains `AIT+jwt`. |
 | **Proof JWT** | Short-lived JWT signed by the agent key and presented at token exchange. Wire `typ` is `AIT-POP+jwt`. |
 | **Delegation hop** | Compact JWS in `delegation_chain`. Wire `typ` is `AIT-DLG+jwt`. |
 | **Agent** | An autonomous software system that interacts with services on behalf of a principal (human user or another agent). |
@@ -782,4 +767,4 @@ These items remain unspecified.
 
 ---
 
-*End of Specification — AgentIDP Protocol v0.1.0 Draft*
+*End of Specification. AgentIDP Protocol v0.1.0.*

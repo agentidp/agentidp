@@ -1,8 +1,6 @@
 # npm publish checklist
 
-`@agentidp/verify` **0.3.0** is prepared for a public npm release. `@agentidp/sdk` **0.2.1** and `@agentidp/mcp` **0.1.0** are already on npm and unchanged. Do not publish until Tim (AgentIDP) writes an explicit yes.
-
-This file is a human checklist. Do not run `npm publish` or `pnpm publish` from CI or an agent session unless that approval is on record. Do not put OTP codes, npm tokens, or `.npmrc` auth lines in git, CI logs, or chat.
+`@agentidp/sdk` **0.2.1**, `@agentidp/verify` **0.3.0**, and `@agentidp/mcp` **0.1.0** are on npm. This file is a human checklist for later releases. Do not run `npm publish` or `pnpm publish` until Tim (AgentIDP) writes an explicit yes. Do not run those commands from CI or an agent session unless that approval is on record. Do not put OTP codes, npm tokens, or `.npmrc` auth lines in git, CI logs, or chat.
 
 ## Versions
 

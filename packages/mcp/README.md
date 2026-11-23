@@ -8,7 +8,7 @@ MCP server for the AgentIDP registry. It lets a coding agent look up and verify 
 | --- | --- | --- |
 | `lookup_agent` | no | An agent's public record: status, capabilities, owner id, verification level, verified domain or organisation |
 | `agent_status` | no | Whether an agent is `active`, `revoked` or `suspended` |
-| `verify_token` | no | Checks an Agent Identity Token against the registry's signing keys and returns its claims |
+| `verify_token` | no | Checks an AgentIDP token against the registry's signing keys and returns its claims |
 | `register_agent` | yes | Creates an agent. The key pair is generated on your machine |
 | `rotate_agent_key` | yes | Replaces an agent's key pair, proving control of the current key |
 | `mint_token` | yes | Exchanges an agent proof for a short-lived token for one audience |

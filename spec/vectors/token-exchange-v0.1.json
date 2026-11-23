@@ -184,7 +184,7 @@
     }
   ],
   "minted_token_example": {
-    "description": "Registry-signed AgentIDP token illustrating cnf.jkt, integer verification_level 2, and no owner_name. Resource-server DPoP (DPoP header, htm/htu/ath) is not implemented.",
+    "description": "Registry-signed AgentIDP token illustrating cnf.jkt and integer verification_level 2. Owner display name is omitted. Resource-server DPoP (DPoP header, htm/htu/ath) is not implemented.",
     "token": "eyJhbGciOiJFUzI1NiIsInR5cCI6IkFJVCtqd3QiLCJraWQiOiJ0ZXN0LXJlZ2lzdHJ5LWVzMjU2In0.eyJhZ2VudF9pZCI6ImFnX3Rlc3R2ZWN0b3IwMSIsImFnZW50X25hbWUiOiJUZXN0IFZlY3RvciBBZ2VudCIsIm93bmVyX2lkIjoib3duX3Rlc3R2ZWN0b3IiLCJvd25lcl90eXBlIjoib3JnIiwidmVyaWZpY2F0aW9uX2xldmVsIjoyLCJjYXBhYmlsaXRpZXMiOlsiY2FsZW5kYXI6cmVhZCJdLCJjbmYiOnsiamt0IjoiWnZNMkV1dGNsUThGTEMwT2gwN3RHOGJZd1lPd3gyakxIYmw1YlFyUnlwMCJ9LCJpc3MiOiJodHRwczovL3JlZ2lzdHJ5LmV4YW1wbGUudGVzdCIsInN1YiI6ImFnX3Rlc3R2ZWN0b3IwMSIsImF1ZCI6Imh0dHBzOi8vYXBpLmV4YW1wbGUuY29tIiwiaWF0IjoxNzYzNDgxNjAwLCJleHAiOjE3NjM0ODUyMDAsImp0aSI6InRva190ZXN0dmVjdG9yX21pbnRlZF8wMDEifQ.RmSGT4P6ZjCYdxFovdJMUGBRlmVWYJg-Ry0JKg6KOWBVAmcvTei3z6wYgMceXcnKV8dWK8iBuYfhenHpSE4G_A",
     "cnf": {
       "jkt": "ZvM2EutclQ8FLC0Oh07tG8bYwYOwx2jLHbl5bQrRyp0"
