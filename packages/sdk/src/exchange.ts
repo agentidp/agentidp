@@ -44,6 +44,7 @@ function asResponse(body: unknown): TokenExchangeResponse | null {
     expires_at: typeof record.expires_at === "string" ? record.expires_at : "",
     agent_id: typeof record.agent_id === "string" ? record.agent_id : "",
     kid: typeof record.kid === "string" ? record.kid : "",
+    receipt: typeof record.receipt === "string" ? record.receipt : null,
   };
 }
 

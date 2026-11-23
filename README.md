@@ -123,9 +123,11 @@ Canonical paths are `/api/v1/...` and `/.well-known/jwks.json`. There are no bar
 | `GET` | `/.well-known/jwks.json` | Registry signing keys (registry-issued tokens from `POST /api/v1/tokens/exchange`) |
 | `GET` | `/api/v1/agents/{agent_id}/public-key` | Agent public JWK for proof verification and `cnf.jkt` |
 | `PUT` | `/api/v1/agents/{agent_id}/public-key` | Register or rotate the public JWK (owner auth) |
-| `POST` | `/api/v1/tokens/exchange` | Mint a registry-signed AgentIDP token (owner API key and proof JWT) |
+| `POST` | `/api/v1/tokens/exchange` | Mint a registry-signed AgentIDP token (owner API key and proof JWT). `receipt` is best-effort and may be null; not every token has a receipt |
 | `GET` | `/api/v1/agents/{agent_id}/status` | `{ agent_id, status, checked_at }` (`active` / `revoked` / `suspended`) |
 | `GET` | `/api/v1/agents/{agent_id}` | Public lookup, including owner fields and `status` when the registry returns them |
+| `GET` | `/.well-known/receipt-keys.json` | Keys that verify signed receipts. Separate from token JWKS |
+| `GET` | `/api/v1/receipts/{token_id}` | Owner fetch of a stored receipt (404 if none) |
 
 Pass `getKey` for offline verification or tests that do not call the network.
 

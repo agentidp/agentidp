@@ -23,7 +23,7 @@ const token = await auth.getToken({
 });
 ```
 
-When `apiKey` or `AGENTIDP_API_KEY` is set, `getToken` signs a proof JWT (`iss`/`sub` = agent id, `aud` = the token endpoint, max 5 minutes) and POSTs it to `/api/v1/tokens/exchange`. Without an API key, `getToken` still signs locally. Local mint is not the registry path.
+When `apiKey` or `AGENTIDP_API_KEY` is set, `getToken` signs a proof JWT (`iss`/`sub` = agent id, `aud` = the token endpoint, max 5 minutes) and POSTs it to `/api/v1/tokens/exchange`. Without an API key, `getToken` still signs locally. Local mint is not the registry path. The exchange JSON may include `receipt`. Issuing is best-effort: `receipt` may be null, and not every token has a receipt. `exchangeToken` returns `receipt` as `string | null`.
 
 The default registry is `https://registry.agentidp.dev`. Override with `registryUrl` or `AGENTIDP_REGISTRY_URL`. Canonical paths are `/api/v1/...` and `/.well-known/jwks.json`.
 

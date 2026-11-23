@@ -34,6 +34,7 @@ Site copy lives in `agentidp/agentidp.dev` (this repository has no landing-page 
 | Registry live URL and canonical paths | `packages/sdk/src/types.ts` (`DEFAULT_REGISTRY_URL`); `packages/verify/src/types.ts`; `packages/verify/src/registry.ts`; `packages/sdk/src/proof.ts`; `packages/sdk/src/exchange.ts`; agentidp/registry `app/api/v1/tokens/exchange/route.ts`; agentidp/registry `app/.well-known/jwks.json/route.ts`; agentidp/registry `app/api/v1/agents/[agent_id]/route.ts`; agentidp/registry `app/api/v1/agents/[agent_id]/status/route.ts`; agentidp/registry `app/api/v1/agents/[agent_id]/public-key/route.ts` | `README.md`; `packages/sdk/README.md`; `packages/verify/README.md`; `spec/AGENTID-RFC-v0.1.0.md` §4.1; `COMPETITIVE-LANDSCAPE.md` |
 | Owner email verification and sign-in rules | agentidp/registry `lib/require-verified-owner.ts`; agentidp/registry `lib/email-verification.ts`; agentidp/registry `lib/unverified-account.ts`; agentidp/registry `docs/email-verification.md`; agentidp/registry `auth.ts`; agentidp/registry `actions/register.ts` | `spec/AGENTID-RFC-v0.1.0.md` §3.2, §3.3; `README.md` |
 | Standards line | `packages/verify/src/verify.ts` (`cnf.jkt` only); agentidp/registry `docs/token-exchange.md` | Exactly this sentence wherever a standards relationship is stated, in `spec/AGENTID-RFC-v0.1.0.md` §3.7, `README.md`, `COMPETITIVE-LANDSCAPE.md`, `packages/verify/README.md`: "Designed alongside RFC 8693 token exchange and RFC 9449 DPoP. Resource-server DPoP and formal profiles of these specs are on the roadmap." |
+| Signed receipts (best-effort; `receipt` may be null; not every token has a receipt) | agentidp/registry `app/api/v1/tokens/exchange/route.ts`; agentidp/registry `lib/receipt-issue.ts`; agentidp/registry `docs/token-exchange.md`; `packages/sdk/src/exchange.ts`; `packages/sdk/src/types.ts` (`TokenExchangeResponse.receipt`) | `README.md`; `AGENTS.md`; `packages/sdk/README.md` |
 
 ## Path index
 
@@ -93,6 +94,9 @@ Verified against `agentidp/registry` `main`. A sibling PR must keep these paths 
 - `actions/register.ts`
 - `auth.ts`
 - `app/api/v1/tokens/exchange/route.ts`
+- `lib/receipt-issue.ts`
+- `lib/receipt-log.ts`
+- `app/docs/receipts/page.tsx`
 - `app/.well-known/jwks.json/route.ts`
 - `app/api/v1/agents/[agent_id]/route.ts`
 - `app/api/v1/agents/[agent_id]/status/route.ts`

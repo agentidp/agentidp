@@ -122,6 +122,11 @@ export interface TokenExchangeResponse {
   expires_at: string;
   agent_id: string;
   kid: string;
+  /**
+   * Best-effort registry-signed receipt. May be null. Not every token has
+   * a receipt.
+   */
+  receipt: string | null;
 }
 
 export interface Confirmation {
