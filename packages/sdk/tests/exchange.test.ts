@@ -132,6 +132,32 @@ describe("AgentAuth exchange", () => {
     );
   });
 
+  it("keeps a successful exchange when receipt is null", async () => {
+    const { exchangeToken } = await import("../src/exchange.js");
+    const minted = await exchangeToken({
+      agentId: "ag_7xK9m2nP4qRtL8",
+      audience: "https://api.example.com",
+      proof: "a.b.c",
+      apiKey: "aidp_test_secret",
+      registryUrl: "https://registry.test",
+      fetch: async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          token: "header.payload.sig",
+          token_type: "AIT+jwt",
+          token_id: "tok_1",
+          expires_at: "2026-11-18T17:00:00.000Z",
+          agent_id: "ag_7xK9m2nP4qRtL8",
+          kid: "registry-kid",
+          receipt: null,
+        }),
+      }),
+    });
+    expect(minted.token).toBe("header.payload.sig");
+    expect(minted.receipt).toBeNull();
+  });
+
   it("surfaces AID-013 from the registry", async () => {
     const keys = await generateAgentKey();
     const auth = new AgentAuth({
