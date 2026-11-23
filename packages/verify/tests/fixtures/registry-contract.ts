@@ -8,9 +8,11 @@
  *   GET {registry}/api/v1/agents/{agent_id}/status
  *   GET {registry}/api/v1/agents/{agent_id}
  *
- * JWKS mock default is `Cache-Control: public, max-age=3600`, matching the
- * live `/.well-known/jwks.json` header. Tests that need a longer max-age to
- * prove the 1-hour cap pass an explicit header.
+ * JWKS mock default is
+ * `Cache-Control: public, max-age=300, s-maxage=60, stale-while-revalidate=60`,
+ * matching the live populated `/.well-known/jwks.json` header. Empty sets are
+ * `no-store`. Tests that need a longer max-age to prove the 1-hour cap pass
+ * an explicit header.
  *
  * No CRL, introspect, or denylist endpoint exists on the registry. Revocation
  * is the status field: active | revoked | suspended.
@@ -24,7 +26,7 @@ export const REGISTRY = "https://registry.test";
 
 export function jwksRoute(
   keys: JWK[],
-  cacheControl = "public, max-age=3600",
+  cacheControl = "public, max-age=300, s-maxage=60, stale-while-revalidate=60",
 ): Record<string, MockRoute> {
   return {
     [`${REGISTRY}/.well-known/jwks.json`]: {
@@ -54,7 +56,7 @@ export function statusRoute(
 export function publicKeyRoute(
   agentId: string,
   jwk: JWK,
-  cacheControl = "public, max-age=86400",
+  cacheControl = "public, max-age=300, s-maxage=60, stale-while-revalidate=60",
 ): Record<string, MockRoute> {
   return {
     [`${REGISTRY}/api/v1/agents/${agentId}/public-key`]: {
